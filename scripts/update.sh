@@ -44,6 +44,30 @@ find fissix/tests/ -name "*.py" -exec sed -i 's/from test\.test_lib2to3 import s
 # fix tokenize.py to handle async with/for outside async functions (handle both quote styles)
 sed -i 's/if token in ("def", "for"):/if token in ("def", "for", "with"):/' fissix/pgen2/tokenize.py
 sed -i "s/if token in ('def', 'for'):/if token in ('def', 'for', 'with'):/" fissix/pgen2/tokenize.py
+# replace deprecated os.path.commonprefix() with os.path.commonpath() in main.py
+python3 - <<'COMMONPATH'
+import re
+with open('fissix/main.py') as f:
+    content = f.read()
+# Replace the commonprefix block with the cleaner commonpath version
+content = re.sub(
+    r'input_base_dir = os\.path\.commonprefix\(args\)\n'
+    r'    if \(input_base_dir and not input_base_dir\.endswith\(os\.sep\)\n'
+    r'        and not os\.path\.isdir\(input_base_dir\)\):\n'
+    r'        # One or more similar names were passed, their directory is the base\.\n'
+    r'        # os\.path\.commonprefix\(\) is ignorant of path elements, this corrects\n'
+    r'        # for that weird API\.\n'
+    r'        input_base_dir = os\.path\.dirname\(input_base_dir\)',
+    'if args:\n        input_base_dir = os.path.commonpath(args)\n'
+    '        if not os.path.isdir(input_base_dir):\n'
+    '            # args are filenames, use their common parent directory.\n'
+    '            input_base_dir = os.path.dirname(input_base_dir)\n'
+    '    else:\n        input_base_dir = ""',
+    content
+)
+with open('fissix/main.py', 'w') as f:
+    f.write(content)
+COMMONPATH
 # restore xfail markers removed by rsync
 python3 - <<'PYEOF'
 import re
