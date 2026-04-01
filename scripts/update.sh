@@ -31,11 +31,31 @@ git -C cpython checkout -f 3.12
 git -C cpython clean -xfd
 
 # copy from cpython
-rsync -av --exclude=__init__.py cpython/Lib/lib2to3/ fissix/
+rsync -av cpython/Lib/lib2to3/ fissix/
 rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
-# update version markers in fissix's custom __init__.py
-scripts/version.sh
+# restore fissix's custom __init__.py (rsync overwrites with plain cpython version)
+# and update version markers inline
+python3 - <<'INITPY'
+import re, subprocess
+
+# get fissix's custom __init__.py from main branch
+content = subprocess.check_output(['git', 'show', 'main:fissix/__init__.py'], text=True)
+
+# update version markers from cpython
+py_version = subprocess.check_output(
+    ['awk', '-F', '"', '/define PY_VERSION /{print $2}', 'cpython/Include/patchlevel.h'],
+    text=True
+).strip()
+cpython_rev = subprocess.check_output(
+    ['git', '-C', 'cpython', 'describe'], text=True
+).strip()
+content = re.sub(r'__base_version__ = ".*"', f'__base_version__ = "{py_version}+"', content)
+content = re.sub(r'__base_revision__ = ".*"', f'__base_revision__ = "{cpython_rev}"', content)
+
+with open('fissix/__init__.py', 'w') as f:
+    f.write(content)
+INITPY
 
 # replace lib2to3 references with fissix
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
