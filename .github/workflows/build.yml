@@ -42,3 +42,31 @@ jobs:
       - name: Lint
         if: matrix.python-version != '3.15'
         run: make lint
+
+  check-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          submodules: true
+      - name: Set up git
+        run: |
+          git config user.email "ci@github.com"
+          git config user.name "CI"
+          git checkout -b base origin/base
+          git checkout -
+      - name: Set Up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Set up venv with black
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install black==24.8.0 -q
+      - name: Run update.sh
+        run: |
+          output=$(bash scripts/update.sh 2>&1)
+          echo "$output"
+          echo "$output" | grep -q "DONE: No upstream changes to lib2to3"
