@@ -230,13 +230,18 @@ class TestAsyncAwait(GrammarTest):
                              async for a in b: pass"""
         )
 
+        self.validate(
+            """def foo():
+                                   async for a in b: pass"""
+        )
+
     def test_async_with(self):
         self.validate(
             """async def foo():
                              async with a: pass"""
         )
 
-        self.invalid_syntax(
+        self.validate(
             """def foo():
                                    async with a: pass"""
         )
