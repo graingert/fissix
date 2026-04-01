@@ -91,7 +91,9 @@ class TestPgen2Caching(support.TestCase):
             code = """
 from fissix.pgen2 import driver as pgen2_driver
 pgen2_driver.load_grammar(%r, save=True, force=True)
-            """ % (grammar_sub_copy,)
+            """ % (
+                grammar_sub_copy,
+            )
             cmd = [sys.executable, "-Wignore:fissix:DeprecationWarning", "-c", code]
             subprocess.check_call(cmd, env=sub_env)
             self.assertTrue(os.path.exists(pickle_sub_name))
@@ -153,53 +155,71 @@ class TestYieldFrom(GrammarTest):
 
 class TestAsyncAwait(GrammarTest):
     def test_await_expr(self):
-        self.validate("""async def foo():
+        self.validate(
+            """async def foo():
                              await x
-                      """)
+                      """
+        )
 
-        self.validate("""async def foo():
+        self.validate(
+            """async def foo():
                              [i async for i in b]
-                      """)
+                      """
+        )
 
-        self.validate("""async def foo():
+        self.validate(
+            """async def foo():
                              {i for i in b
                                 async for i in a if await i
                                   for b in i}
-                      """)
+                      """
+        )
 
-        self.validate("""async def foo():
+        self.validate(
+            """async def foo():
                              [await i for i in b if await c]
-                      """)
+                      """
+        )
 
-        self.validate("""async def foo():
+        self.validate(
+            """async def foo():
                              [ i for i in b if c]
-                      """)
+                      """
+        )
 
-        self.validate("""async def foo():
+        self.validate(
+            """async def foo():
 
             def foo(): pass
 
             def foo(): pass
 
             await x
-        """)
+        """
+        )
 
         self.validate("""async def foo(): return await a""")
 
-        self.validate("""def foo():
+        self.validate(
+            """def foo():
             def foo(): pass
             async def foo(): await x
-        """)
+        """
+        )
 
         self.invalid_syntax("await x")
-        self.invalid_syntax("""def foo():
-                                   await x""")
+        self.invalid_syntax(
+            """def foo():
+                                   await x"""
+        )
 
-        self.invalid_syntax("""def foo():
+        self.invalid_syntax(
+            """def foo():
             def foo(): pass
             async def foo(): pass
             await x
-        """)
+        """
+        )
 
     def test_async_var(self):
         self.validate("""async = 1""")
@@ -207,24 +227,36 @@ class TestAsyncAwait(GrammarTest):
         self.validate("""def async(): pass""")
 
     def test_async_for(self):
-        self.validate("""async def foo():
-                             async for a in b: pass""")
+        self.validate(
+            """async def foo():
+                             async for a in b: pass"""
+        )
 
-        self.validate("""def foo():
-                                   async for a in b: pass""")
+        self.validate(
+            """def foo():
+                                   async for a in b: pass"""
+        )
 
     def test_async_with(self):
-        self.validate("""async def foo():
-                             async with a: pass""")
+        self.validate(
+            """async def foo():
+                             async with a: pass"""
+        )
 
-        self.validate("""def foo():
-                                   async with a: pass""")
+        self.validate(
+            """def foo():
+                                   async with a: pass"""
+        )
 
     def test_async_generator(self):
-        self.validate("""async def foo():
-                   return (i * 2 async for i in arange(42))""")
-        self.validate("""def foo():
-                   return (i * 2 async for i in arange(42))""")
+        self.validate(
+            """async def foo():
+                   return (i * 2 async for i in arange(42))"""
+        )
+        self.validate(
+            """def foo():
+                   return (i * 2 async for i in arange(42))"""
+        )
 
 
 class TestRaiseChanges(GrammarTest):
@@ -715,10 +747,12 @@ class TestPositionalOnlyArgs(GrammarTest):
         driver.parse_string("def all_markers(a, b=2, /, c, d=4, *, e=5, f): pass\n")
 
     def test_all_with_args_and_kwargs(self):
-        driver.parse_string("""def all_markers_with_args_and_kwargs(
+        driver.parse_string(
+            """def all_markers_with_args_and_kwargs(
                            aa, b, /, _cc, d, *args, e, f_f, **kwargs,
                    ):
-                       pass\n""")
+                       pass\n"""
+        )
 
     def test_lambda_soup(self):
         driver.parse_string("lambda a, b, /, c, d, *args, e, f, **kw: kw\n")

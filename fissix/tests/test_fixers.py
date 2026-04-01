@@ -1794,7 +1794,9 @@ class ImportsFixerTests:
             s = """
                 def f():
                     %s.method()
-                """ % (old,)
+                """ % (
+                old,
+            )
             self.unchanged(s)
 
             # test nested usage
