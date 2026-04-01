@@ -2,6 +2,11 @@
 
 set -e
 
+CHECK_MODE=0
+if [[ "${1:-}" == "--check" ]]; then
+    CHECK_MODE=1
+fi
+
 finish() {
     set +x
     echo $2
@@ -15,30 +20,30 @@ fi
 # debug mode
 set -x
 
-# make sure no local changes
-git update-index -q --refresh
-if ! git diff-index --quiet HEAD --; then
-    finish 1 "ERROR: local changes present; stash or commit then retry"
+# Find a working black command: .venv first, then bare python
+if [[ -x .venv/bin/python ]]; then
+    BLACK=".venv/bin/python -m black"
+else
+    BLACK="python -m black"
 fi
 
-# switch to base branch, and discard local commits
-git checkout -f base
-git reset --hard origin/base
+# ── sync: replay the upstream import ──
+#
+# This function rsyncs lib2to3 from the cpython submodule into fissix/,
+# restores the custom __init__.py, applies fissix-specific patches, renames
+# lib2to3 → fissix in all .py files, and reformats with black.
+#
+# It is used by both normal update mode and --check mode.
+sync() {
+    # copy from cpython
+    rsync -av cpython/Lib/lib2to3/ fissix/
+    rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
-# update cpython to latest 3.12
-git submodule update --init
-git -C cpython checkout -f 3.12
-git -C cpython clean -xfd
-
-# copy from cpython
-rsync -av cpython/Lib/lib2to3/ fissix/
-rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
-
-# restore fissix's custom __init__.py (rsync overwrites with plain cpython version)
-# and update version markers from cpython
-PY_VERSION=$(awk -F '"' '/define PY_VERSION /{print $2}' cpython/Include/patchlevel.h)
-CPYTHON_REV=$(git -C cpython describe)
-cat > fissix/__init__.py << FISSIX_INIT
+    # restore fissix's custom __init__.py (rsync overwrites with plain cpython version)
+    # and update version markers from cpython
+    PY_VERSION=$(awk -F '"' '/define PY_VERSION /{print $2}' cpython/Include/patchlevel.h)
+    CPYTHON_REV=$(git -C cpython describe)
+    cat > fissix/__init__.py << FISSIX_INIT
 # copyright 2022 Amethyst Reese
 # Licensed under the PSF license V2
 
@@ -99,19 +104,64 @@ driver._generate_pickle_name = _generate_pickle_name
 driver.load_grammar = load_grammar
 FISSIX_INIT
 
-# apply fissix-specific patches before renaming lib2to3 -> fissix
-patch -p0 < scripts/patches/tokenize_async_with.patch
-patch -p0 < scripts/patches/main_commonpath.patch
-patch -p0 < scripts/patches/test_fixers_support_import.patch
-patch -p0 < scripts/patches/test_main_xfail.patch
-patch -p0 < scripts/patches/test_parser_xfail.patch
+    # apply fissix-specific patches before renaming lib2to3 -> fissix
+    patch -p0 < scripts/patches/tokenize_async_with.patch
+    patch -p0 < scripts/patches/main_commonpath.patch
+    patch -p0 < scripts/patches/test_fixers_support_import.patch
+    patch -p0 < scripts/patches/test_main_xfail.patch
+    patch -p0 < scripts/patches/test_parser_xfail.patch
 
-# replace lib2to3 references with fissix
-find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
+    # replace lib2to3 references with fissix
+    find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
 
+    # reformat, ignore any failures
+    $BLACK --fast fissix/ || true
+}
 
-# reformat lib2to3, ignore any failures
-.venv/bin/python -m black --fast fissix/ || true
+# ── --check mode: verify the tree matches what sync() produces ──
+if [[ $CHECK_MODE -eq 1 ]]; then
+    sync
+
+    DRIFT=0
+
+    # check for modified tracked files
+    if ! git diff --exit-code fissix/; then
+        DRIFT=1
+    fi
+
+    # check for untracked files (upstream added a file we haven't committed)
+    UNTRACKED=$(git ls-files --others --exclude-standard fissix/)
+    if [[ -n "$UNTRACKED" ]]; then
+        echo "Untracked files in fissix/ after sync:"
+        echo "$UNTRACKED"
+        DRIFT=1
+    fi
+
+    if [[ $DRIFT -ne 0 ]]; then
+        finish 1 "ERROR: fissix/ has drifted from what update.sh produces. Re-run scripts/update.sh."
+    fi
+
+    finish 0 "OK: fissix/ is in sync with cpython submodule and patches."
+fi
+
+# ── normal update mode ──
+
+# make sure no local changes
+git update-index -q --refresh
+if ! git diff-index --quiet HEAD --; then
+    finish 1 "ERROR: local changes present; stash or commit then retry"
+fi
+
+# switch to base branch, and discard local commits
+git checkout -f base
+git reset --hard origin/base
+
+# update cpython to latest 3.12
+git submodule update --init
+git -C cpython checkout -f 3.12
+git -C cpython clean -xfd
+
+sync
 
 # Stop early if no changes
 git update-index -q --refresh
@@ -134,7 +184,7 @@ if ! git cherry-pick base --no-commit; then
 fi
 
 # reformat to catch merge conflicts
-.venv/bin/python -m black --fast fissix/ || true
+$BLACK --fast fissix/ || true
 
 # Update version markers
 scripts/version.sh

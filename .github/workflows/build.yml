@@ -12,6 +12,25 @@ defaults:
     shell: bash
 
 jobs:
+  check-sync:
+    name: Verify fissix/ matches update.sh output
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Fetch cpython tags for git describe
+        run: git -C cpython fetch --tags --depth=50
+      - name: Set Up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: make EXTRAS=dev install
+      - name: Verify sync is clean
+        run: scripts/update.sh --check
+
   fissix:
     runs-on: ${{ matrix.os }}
     strategy:
