@@ -35,27 +35,69 @@ rsync -av cpython/Lib/lib2to3/ fissix/
 rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
 # restore fissix's custom __init__.py (rsync overwrites with plain cpython version)
-# and update version markers inline
-python3 - <<'INITPY'
-import re, subprocess
+# and update version markers from cpython
+PY_VERSION=$(awk -F '"' '/define PY_VERSION /{print $2}' cpython/Include/patchlevel.h)
+CPYTHON_REV=$(git -C cpython describe)
+cat > fissix/__init__.py << FISSIX_INIT
+# copyright 2022 Amethyst Reese
+# Licensed under the PSF license V2
 
-# get fissix's custom __init__.py from main branch
-content = subprocess.check_output(['git', 'show', 'main:fissix/__init__.py'], text=True)
 
-# update version markers from cpython
-py_version = subprocess.check_output(
-    ['awk', '-F', '"', '/define PY_VERSION /{print $2}', 'cpython/Include/patchlevel.h'],
-    text=True
-).strip()
-cpython_rev = subprocess.check_output(
-    ['git', '-C', 'cpython', 'describe'], text=True
-).strip()
-content = re.sub(r'__base_version__ = ".*"', f'__base_version__ = "{py_version}"', content)
-content = re.sub(r'__base_revision__ = ".*"', f'__base_revision__ = "{cpython_rev}"', content)
+"""
+Monkeypatches to override default behavior of lib2to3.
+"""
 
-with open('fissix/__init__.py', 'w') as f:
-    f.write(content)
-INITPY
+import logging
+import os
+import sys
+import tempfile
+from pathlib import Path
+
+from platformdirs import user_cache_dir
+
+from .__version__ import __version__
+from .pgen2 import driver, grammar, pgen
+
+__base_version__ = "${PY_VERSION}"
+__base_revision__ = "${CPYTHON_REV}"
+
+CACHE_DIR = Path(user_cache_dir("fissix", version=__version__))
+
+
+def _generate_pickle_name(gt):
+    path = Path(gt)
+    filename = f"{path.stem}{__base_version__}.pickle"
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    return (CACHE_DIR / filename).as_posix()
+
+
+def load_grammar(gt="Grammar.txt", gp=None, save=True, force=False, logger=None):
+    """Load the grammar (maybe from a pickle)."""
+    if logger is None:
+        logger = logging.getLogger()
+    gp = _generate_pickle_name(gt) if gp is None else gp
+    if force or not driver._newer(gp, gt):
+        logger.info("Generating grammar tables from %s", gt)
+        g = pgen.generate_grammar(gt)
+        if save:
+            logger.info("Writing grammar tables to %s", gp)
+            # Change here...
+            with tempfile.TemporaryDirectory(dir=os.path.dirname(gp)) as d:
+                tempfilename = os.path.join(d, os.path.basename(gp))
+                try:
+                    g.dump(tempfilename)
+                    os.rename(tempfilename, gp)
+                except OSError as e:
+                    logger.info("Writing failed: %s", e)
+    else:
+        g = grammar.Grammar()
+        g.load(gp)
+    return g
+
+
+driver._generate_pickle_name = _generate_pickle_name
+driver.load_grammar = load_grammar
+FISSIX_INIT
 
 # replace lib2to3 references with fissix
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
