@@ -64,7 +64,7 @@ jobs:
       - name: Set up venv with black
         run: |
           python -m venv .venv
-          .venv/bin/pip install black==24.8.0 -q
+          .venv/bin/pip install black==26.3.1 -q
       - name: Run update.sh
         run: |
           output=$(bash scripts/update.sh 2>&1)
