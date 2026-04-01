@@ -50,7 +50,7 @@ py_version = subprocess.check_output(
 cpython_rev = subprocess.check_output(
     ['git', '-C', 'cpython', 'describe'], text=True
 ).strip()
-content = re.sub(r'__base_version__ = ".*"', f'__base_version__ = "{py_version}+"', content)
+content = re.sub(r'__base_version__ = ".*"', f'__base_version__ = "{py_version}"', content)
 content = re.sub(r'__base_revision__ = ".*"', f'__base_revision__ = "{cpython_rev}"', content)
 
 with open('fissix/__init__.py', 'w') as f:
