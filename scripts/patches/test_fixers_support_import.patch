@@ -1,0 +1,11 @@
+--- fissix/tests/test_fixers.py
++++ fissix/tests/test_fixers.py
+@@ -7,7 +7,7 @@
+ 
+ # Local imports
+ from lib2to3 import pygram, fixer_util
+-from test.test_lib2to3 import support
++from . import support
+ 
+ 
+ class FixerTestCase(support.TestCase):

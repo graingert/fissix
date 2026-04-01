@@ -99,78 +99,16 @@ driver._generate_pickle_name = _generate_pickle_name
 driver.load_grammar = load_grammar
 FISSIX_INIT
 
+# apply fissix-specific patches before renaming lib2to3 -> fissix
+patch -p0 < scripts/patches/tokenize_async_with.patch
+patch -p0 < scripts/patches/main_commonpath.patch
+patch -p0 < scripts/patches/test_fixers_support_import.patch
+patch -p0 < scripts/patches/test_main_xfail.patch
+patch -p0 < scripts/patches/test_parser_xfail.patch
+
 # replace lib2to3 references with fissix
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
-# fix test imports that use stdlib's test.test_lib2to3 instead of relative import
-find fissix/tests/ -name "*.py" -exec sed -i 's/from test\.test_lib2to3 import support/from . import support/g' {} +
-# fix tokenize.py to handle async with/for outside async functions (handle both quote styles)
-sed -i 's/if token in ("def", "for"):/if token in ("def", "for", "with"):/' fissix/pgen2/tokenize.py
-sed -i "s/if token in ('def', 'for'):/if token in ('def', 'for', 'with'):/" fissix/pgen2/tokenize.py
-# replace deprecated os.path.commonprefix() with os.path.commonpath() in main.py
-python3 - <<'COMMONPATH'
-import re
-with open('fissix/main.py') as f:
-    content = f.read()
-# Replace the commonprefix block with the cleaner commonpath version
-content = re.sub(
-    r'input_base_dir = os\.path\.commonprefix\(args\)\n'
-    r'    if \(input_base_dir and not input_base_dir\.endswith\(os\.sep\)\n'
-    r'        and not os\.path\.isdir\(input_base_dir\)\):\n'
-    r'        # One or more similar names were passed, their directory is the base\.\n'
-    r'        # os\.path\.commonprefix\(\) is ignorant of path elements, this corrects\n'
-    r'        # for that weird API\.\n'
-    r'        input_base_dir = os\.path\.dirname\(input_base_dir\)',
-    'if args:\n        input_base_dir = os.path.commonpath(args)\n'
-    '        if not os.path.isdir(input_base_dir):\n'
-    '            # args are filenames, use their common parent directory.\n'
-    '            input_base_dir = os.path.dirname(input_base_dir)\n'
-    '    else:\n        input_base_dir = ""',
-    content
-)
-with open('fissix/main.py', 'w') as f:
-    f.write(content)
-COMMONPATH
-# restore xfail markers removed by rsync
-python3 - <<'PYEOF'
-import re
 
-for filepath, pattern, replacement in [
-    ('fissix/tests/test_main.py',
-     '    def test_filename_changing_on_output_single_dir(',
-     '    @pytest.mark.xfail\n    def test_filename_changing_on_output_single_dir('),
-    ('fissix/tests/test_main.py',
-     '    def test_filename_changing_on_output_two_files(',
-     '    @pytest.mark.xfail\n    def test_filename_changing_on_output_two_files('),
-    ('fissix/tests/test_main.py',
-     '    def test_filename_changing_on_output_single_file(',
-     '    @pytest.mark.xfail\n    def test_filename_changing_on_output_single_file('),
-]:
-    with open(filepath) as f:
-        content = f.read()
-    if replacement not in content:
-        content = content.replace(pattern, replacement)
-    if 'import pytest' not in content:
-        content = content.replace('from fissix import main', 'import pytest\n\nfrom fissix import main')
-    with open(filepath, 'w') as f:
-        f.write(content)
-
-# test_parser.py xfail
-filepath = 'fissix/tests/test_parser.py'
-with open(filepath) as f:
-    content = f.read()
-marker = '@pytest.mark.xfail\n    @unittest.skipIf(sys.executable is None'
-if marker not in content:
-    import re
-    content = re.sub(
-        r'(@unittest\.skipIf\(sys\.executable is None, ["\']sys\.executable required["\']\)\n    @unittest\.skipIf\(\n        sys\.platform in \{["\']emscripten["\'], ["\']wasi["\']\}, ["\']requires working subprocess["\']\n    \)\n    def test_load_grammar_from_subprocess\()',
-        r'@pytest.mark.xfail\n    \1',
-        content
-    )
-if 'import pytest' not in content:
-    content = content.replace('import unittest', 'import pytest\nimport unittest')
-with open(filepath, 'w') as f:
-    f.write(content)
-PYEOF
 
 # reformat lib2to3, ignore any failures
 .venv/bin/python -m black --fast fissix/ || true
