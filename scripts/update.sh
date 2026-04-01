@@ -33,7 +33,8 @@ git reset --hard origin/base
 
 # update cpython to latest 3.12
 git submodule update --init
-git -C cpython checkout -f 3.12
+git -C cpython fetch origin 3.12
+git -C cpython checkout -f origin/3.12
 git -C cpython clean -xfd
 
 # copy from cpython
