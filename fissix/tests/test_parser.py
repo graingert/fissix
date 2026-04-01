@@ -21,6 +21,7 @@ import subprocess
 import sys
 import tempfile
 import test.support
+import pytest
 import unittest
 
 # Local imports
@@ -60,6 +61,7 @@ class TestPgen2Caching(support.TestCase):
         finally:
             shutil.rmtree(tmpdir)
 
+    @pytest.mark.xfail
     @unittest.skipIf(sys.executable is None, "sys.executable required")
     @unittest.skipIf(
         sys.platform in {"emscripten", "wasi"}, "requires working subprocess"

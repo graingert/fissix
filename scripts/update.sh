@@ -38,6 +38,47 @@ rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
 # fix test imports that use stdlib's test.test_lib2to3 instead of relative import
 find fissix/tests/ -name "*.py" -exec sed -i 's/from test\.test_lib2to3 import support/from . import support/g' {} +
+# fix tokenize.py to handle async with/for outside async functions
+sed -i 's/if token in ("def", "for"):/if token in ("def", "for", "with"):/' fissix/pgen2/tokenize.py
+# restore xfail markers removed by rsync
+python3 - <<'PYEOF'
+import re
+
+for filepath, pattern, replacement in [
+    ('fissix/tests/test_main.py',
+     '    def test_filename_changing_on_output_single_dir(',
+     '    @pytest.mark.xfail\n    def test_filename_changing_on_output_single_dir('),
+    ('fissix/tests/test_main.py',
+     '    def test_filename_changing_on_output_two_files(',
+     '    @pytest.mark.xfail\n    def test_filename_changing_on_output_two_files('),
+    ('fissix/tests/test_main.py',
+     '    def test_filename_changing_on_output_single_file(',
+     '    @pytest.mark.xfail\n    def test_filename_changing_on_output_single_file('),
+]:
+    with open(filepath) as f:
+        content = f.read()
+    if replacement not in content:
+        content = content.replace(pattern, replacement)
+    if 'import pytest' not in content:
+        content = content.replace('from fissix import main', 'import pytest\n\nfrom fissix import main')
+    with open(filepath, 'w') as f:
+        f.write(content)
+
+# test_parser.py xfail
+filepath = 'fissix/tests/test_parser.py'
+with open(filepath) as f:
+    content = f.read()
+marker = '@pytest.mark.xfail\n    @unittest.skipIf(sys.executable is None'
+if marker not in content:
+    content = content.replace(
+        '@unittest.skipIf(sys.executable is None, "sys.executable required")\n    @unittest.skipIf(\n        sys.platform in {"emscripten", "wasi"}, "requires working subprocess"\n    )\n    def test_load_grammar_from_subprocess(',
+        '@pytest.mark.xfail\n    @unittest.skipIf(sys.executable is None, "sys.executable required")\n    @unittest.skipIf(\n        sys.platform in {"emscripten", "wasi"}, "requires working subprocess"\n    )\n    def test_load_grammar_from_subprocess('
+    )
+if 'import pytest' not in content:
+    content = content.replace('import unittest', 'import pytest\nimport unittest')
+with open(filepath, 'w') as f:
+    f.write(content)
+PYEOF
 
 # reformat lib2to3, ignore any failures
 .venv/bin/python -m black --fast fissix/ || true

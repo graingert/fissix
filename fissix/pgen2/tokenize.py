@@ -593,7 +593,7 @@ def generate_tokens(readline):
                         stashed = tok
                         continue
 
-                    if token in ("def", "for"):
+                    if token in ("def", "for", "with"):
                         if stashed and stashed[0] == NAME and stashed[1] == "async":
 
                             if token == "def":
