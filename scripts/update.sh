@@ -34,12 +34,16 @@ git -C cpython clean -xfd
 rsync -av --exclude=__init__.py cpython/Lib/lib2to3/ fissix/
 rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
+# update version markers in fissix's custom __init__.py
+scripts/version.sh
+
 # replace lib2to3 references with fissix
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
 # fix test imports that use stdlib's test.test_lib2to3 instead of relative import
 find fissix/tests/ -name "*.py" -exec sed -i 's/from test\.test_lib2to3 import support/from . import support/g' {} +
-# fix tokenize.py to handle async with/for outside async functions
+# fix tokenize.py to handle async with/for outside async functions (handle both quote styles)
 sed -i 's/if token in ("def", "for"):/if token in ("def", "for", "with"):/' fissix/pgen2/tokenize.py
+sed -i "s/if token in ('def', 'for'):/if token in ('def', 'for', 'with'):/" fissix/pgen2/tokenize.py
 # restore xfail markers removed by rsync
 python3 - <<'PYEOF'
 import re
@@ -70,9 +74,11 @@ with open(filepath) as f:
     content = f.read()
 marker = '@pytest.mark.xfail\n    @unittest.skipIf(sys.executable is None'
 if marker not in content:
-    content = content.replace(
-        '@unittest.skipIf(sys.executable is None, "sys.executable required")\n    @unittest.skipIf(\n        sys.platform in {"emscripten", "wasi"}, "requires working subprocess"\n    )\n    def test_load_grammar_from_subprocess(',
-        '@pytest.mark.xfail\n    @unittest.skipIf(sys.executable is None, "sys.executable required")\n    @unittest.skipIf(\n        sys.platform in {"emscripten", "wasi"}, "requires working subprocess"\n    )\n    def test_load_grammar_from_subprocess('
+    import re
+    content = re.sub(
+        r'(@unittest\.skipIf\(sys\.executable is None, ["\']sys\.executable required["\']\)\n    @unittest\.skipIf\(\n        sys\.platform in \{["\']emscripten["\'], ["\']wasi["\']\}, ["\']requires working subprocess["\']\n    \)\n    def test_load_grammar_from_subprocess\()',
+        r'@pytest.mark.xfail\n    \1',
+        content
     )
 if 'import pytest' not in content:
     content = content.replace('import unittest', 'import pytest\nimport unittest')
