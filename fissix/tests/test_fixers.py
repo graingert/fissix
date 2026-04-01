@@ -7,7 +7,7 @@ from operator import itemgetter
 
 # Local imports
 from fissix import pygram, fixer_util
-from test.test_lib2to3 import support
+from . import support
 
 
 class FixerTestCase(support.TestCase):

@@ -36,6 +36,8 @@ rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
 # replace lib2to3 references with fissix
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
+# fix test imports that use stdlib's test.test_lib2to3 instead of relative import
+find fissix/tests/ -name "*.py" -exec sed -i 's/from test\.test_lib2to3 import support/from . import support/g' {} +
 
 # reformat lib2to3, ignore any failures
 .venv/bin/python -m black --fast fissix/ || true
