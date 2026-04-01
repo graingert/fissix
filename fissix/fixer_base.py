@@ -13,7 +13,6 @@ from .fixer_util import does_tree_import
 
 
 class BaseFix(object):
-
     """Optional base class for fixers.
 
     The subclass name must be FixFooBar where FooBar is the result of
@@ -169,7 +168,7 @@ class BaseFix(object):
 
 
 class ConditionalFix(BaseFix):
-    """ Base class for fixers which not execute if an import is found. """
+    """Base class for fixers which not execute if an import is found."""
 
     # This is the name of the import which, if found, will cause the test to be skipped
     skip_on = None

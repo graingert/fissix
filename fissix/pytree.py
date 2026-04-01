@@ -34,7 +34,6 @@ def type_repr(type_num):
 
 
 class Base(object):
-
     """
     Abstract base class for Node and Leaf.
 
@@ -212,7 +211,6 @@ class Base(object):
 
 
 class Node(Base):
-
     """Concrete implementation for interior nodes."""
 
     def __init__(self, type, children, context=None, prefix=None, fixers_applied=None):
@@ -324,7 +322,6 @@ class Node(Base):
 
 
 class Leaf(Base):
-
     """Concrete implementation for leaf nodes."""
 
     # Default values for instance variables
@@ -420,7 +417,6 @@ def convert(gr, raw_node):
 
 
 class BasePattern(object):
-
     """
     A pattern is a tree matching pattern.
 
@@ -506,6 +502,7 @@ class BasePattern(object):
 
 
 class LeafPattern(BasePattern):
+
     def __init__(self, type=None, content=None, name=None):
         """
         Initializer.  Takes optional type, content, and name.
@@ -610,7 +607,6 @@ class NodePattern(BasePattern):
 
 
 class WildcardPattern(BasePattern):
-
     """
     A wildcard pattern can match zero or more nodes.
 
@@ -736,8 +732,8 @@ class WildcardPattern(BasePattern):
                         r[self.name] = nodes[:count]
                     yield count, r
             except RuntimeError:
-                # We fall back to the iterative pattern matching scheme if the recursive
-                # scheme hits the recursion limit.
+                # Fall back to the iterative pattern matching scheme if the
+                # recursive scheme hits the recursion limit (RecursionError).
                 for count, r in self._iterative_matches(nodes):
                     if self.name:
                         r[self.name] = nodes[:count]
@@ -807,6 +803,7 @@ class WildcardPattern(BasePattern):
 
 
 class NegatedPattern(BasePattern):
+
     def __init__(self, content=None):
         """
         Initializer.
@@ -852,7 +849,7 @@ def generate_matches(patterns, nodes):
         (count, results) tuples where:
         count: the entire sequence of patterns matches nodes[:count];
         results: dict containing named submatches.
-        """
+    """
     if not patterns:
         yield 0, {}
     else:

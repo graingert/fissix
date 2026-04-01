@@ -14,6 +14,7 @@ __author__ = "Guido van Rossum <guido@python.org>"
 # Python imports
 import io
 import os
+import pkgutil
 import sys
 import logging
 import operator
@@ -30,13 +31,12 @@ from . import btm_matcher as bm
 def get_all_fix_names(fixer_pkg, remove_prefix=True):
     """Return a sorted list of all available fix names in the given package."""
     pkg = __import__(fixer_pkg, [], [], ["*"])
-    fixer_dir = os.path.dirname(pkg.__file__)
     fix_names = []
-    for name in sorted(os.listdir(fixer_dir)):
-        if name.startswith("fix_") and name.endswith(".py"):
+    for finder, name, ispkg in pkgutil.iter_modules(pkg.__path__):
+        if name.startswith("fix_"):
             if remove_prefix:
                 name = name[4:]
-            fix_names.append(name[:-3])
+            fix_names.append(name)
     return fix_names
 
 
@@ -45,8 +45,8 @@ class _EveryNode(Exception):
 
 
 def _get_head_types(pat):
-    """ Accepts a pytree Pattern Node and returns a set
-        of the pattern types which will match first. """
+    """Accepts a pytree Pattern Node and returns a set
+    of the pattern types which will match first."""
 
     if isinstance(pat, (pytree.NodePattern, pytree.LeafPattern)):
         # NodePatters must either have no type and no content
@@ -73,8 +73,8 @@ def _get_head_types(pat):
 
 
 def _get_headnode_dict(fixer_list):
-    """ Accepts a list of fixers and returns a dictionary
-        of head node type --> fixer list.  """
+    """Accepts a list of fixers and returns a dictionary
+    of head node type --> fixer list."""
     head_nodes = collections.defaultdict(list)
     every = []
     for fixer in fixer_list:
@@ -159,7 +159,11 @@ class FixerError(Exception):
 
 class RefactoringTool(object):
 
-    _default_options = {"print_function": False, "write_unchanged_files": False}
+    _default_options = {
+        "print_function": False,
+        "exec_function": False,
+        "write_unchanged_files": False,
+    }
 
     CLASS_PREFIX = "Fix"  # The prefix for fixer classes
     FILE_PREFIX = "fix_"  # The prefix for modules with a fixer within
@@ -177,10 +181,13 @@ class RefactoringTool(object):
         self.options = self._default_options.copy()
         if options is not None:
             self.options.update(options)
+        self.grammar = pygram.python_grammar.copy()
+
         if self.options["print_function"]:
-            self.grammar = pygram.python_grammar_no_print_statement
-        else:
-            self.grammar = pygram.python_grammar
+            del self.grammar.keywords["print"]
+        elif self.options["exec_function"]:
+            del self.grammar.keywords["exec"]
+
         # When this is True, the refactor*() methods will call write_file() for
         # files processed even if they were not changed during refactoring. If
         # and only if the refactor method's write parameter was True.
@@ -518,7 +525,7 @@ class RefactoringTool(object):
         set.
         """
         try:
-            fp = io.open(filename, "w", encoding=encoding)
+            fp = io.open(filename, "w", encoding=encoding, newline="")
         except OSError as err:
             self.log_error("Can't create %s: %s", filename, err)
             return
@@ -684,6 +691,7 @@ class MultiprocessingUnsupported(Exception):
 
 
 class MultiprocessRefactoringTool(RefactoringTool):
+
     def __init__(self, *args, **kwargs):
         super(MultiprocessRefactoringTool, self).__init__(*args, **kwargs)
         self.queue = None

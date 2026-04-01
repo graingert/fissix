@@ -1,4 +1,5 @@
 """Fix incompatible imports and module references."""
+
 # Authors: Collin Winter, Nick Edds
 
 # Local imports
@@ -50,7 +51,7 @@ MAPPING = {
     "BaseHTTPServer": "http.server",
     "SimpleHTTPServer": "http.server",
     "CGIHTTPServer": "http.server",
-    # 'test.test_support': 'test.support',
+    #'test.test_support': 'test.support',
     "commands": "subprocess",
     "UserString": "collections",
     "UserList": "collections",

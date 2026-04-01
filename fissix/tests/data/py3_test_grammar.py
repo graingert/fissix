@@ -28,7 +28,7 @@ class TokenTests(unittest.TestCase):
 
     def testPlainIntegers(self):
         self.assertEquals(type(000), type(0))
-        self.assertEquals(0xff, 255)
+        self.assertEquals(0xFF, 255)
         self.assertEquals(0o377, 255)
         self.assertEquals(2147483647, 0o17777777777)
         self.assertEquals(0b1001, 9)
@@ -40,7 +40,7 @@ class TokenTests(unittest.TestCase):
             self.assertEquals(-2147483647 - 1, -0o20000000000)
             # XXX -2147483648
             self.assert_(0o37777777777 > 0)
-            self.assert_(0xffffffff > 0)
+            self.assert_(0xFFFFFFFF > 0)
             self.assert_(0b1111111111111111111111111111111 > 0)
             for s in (
                 "2147483648",
@@ -55,7 +55,7 @@ class TokenTests(unittest.TestCase):
         elif maxsize == 9223372036854775807:
             self.assertEquals(-9223372036854775807 - 1, -0o1000000000000000000000)
             self.assert_(0o1777777777777777777777 > 0)
-            self.assert_(0xffffffffffffffff > 0)
+            self.assert_(0xFFFFFFFFFFFFFFFF > 0)
             self.assert_(
                 0b11111111111111111111111111111111111111111111111111111111111111 > 0
             )
@@ -74,48 +74,48 @@ class TokenTests(unittest.TestCase):
 
     def testLongIntegers(self):
         x = 0
-        x = 0xffffffffffffffff
-        x = 0Xffffffffffffffff
+        x = 0xFFFFFFFFFFFFFFFF
+        x = 0xFFFFFFFFFFFFFFFF
         x = 0o77777777777777777
-        x = 0O77777777777777777
+        x = 0o77777777777777777
         x = 123456789012345678901234567890
         x = 0b100000000000000000000000000000000000000000000000000000000000000000000
-        x = 0B111111111111111111111111111111111111111111111111111111111111111111111
+        x = 0b111111111111111111111111111111111111111111111111111111111111111111111
 
     def testUnderscoresInNumbers(self):
         # Integers
         x = 1_0
         x = 123_456_7_89
-        x = 0xabc_123_4_5
-        x = 0X_abc_123
-        x = 0B11_01
+        x = 0xABC_123_4_5
+        x = 0x_ABC_123
+        x = 0b11_01
         x = 0b_11_01
         x = 0o45_67
-        x = 0O_45_67
+        x = 0o_45_67
 
         # Floats
         x = 3_1.4
         x = 03_1.4
-        x = 3_1.
-        x = .3_1
+        x = 3_1.0
+        x = 0.3_1
         x = 3.1_4
         x = 0_3.1_4
         x = 3e1_4
-        x = 3_1e+4_1
-        x = 3_1E-4_1
+        x = 3_1e4_1
+        x = 3_1e-4_1
 
     def testFloats(self):
         x = 3.14
-        x = 314.
+        x = 314.0
         x = 0.314
         # XXX x = 000.314
-        x = .314
+        x = 0.314
         x = 3e14
-        x = 3E14
+        x = 3e14
         x = 3e-14
-        x = 3e+14
-        x = 3.e14
-        x = .3e14
+        x = 3e14
+        x = 3.0e14
+        x = 0.3e14
         x = 3.1e4
 
     def testStringLiterals(self):
@@ -217,7 +217,9 @@ class GrammarTests(unittest.TestCase):
         self.assertEquals(f2.__code__.co_varnames, ("one_argument",))
         self.assertEquals(f3.__code__.co_varnames, ("two", "arguments"))
 
-        def a1(one_arg,):
+        def a1(
+            one_arg,
+        ):
             pass
 
         def a2(two, args):
@@ -367,6 +369,7 @@ class GrammarTests(unittest.TestCase):
             pass
         else:
             self.fail("Bytes should not work as keyword argument names")
+
         # keyword only argument tests
         def pos0key1(*, key):
             return key
@@ -439,6 +442,7 @@ class GrammarTests(unittest.TestCase):
             f.__annotations__,
             {"b": 1, "c": 2, "e": 3, "g": 6, "h": 7, "j": 9, "k": 11, "return": 12},
         )
+
         # Check for SF Bug #1697248 - mixing decorators and a return annotation
         def null(x):
             return x
@@ -1027,7 +1031,7 @@ class GrammarTests(unittest.TestCase):
             ],
         )
         self.assertEqual(
-            [(lambda a: [a ** i for i in range(a + 1)])(j) for j in range(5)],
+            [(lambda a: [a**i for i in range(a + 1)])(j) for j in range(5)],
             [[1], [1, 1], [1, 2, 4], [1, 3, 9, 27], [1, 4, 16, 64, 256]],
         )
 
@@ -1101,9 +1105,7 @@ class GrammarTests(unittest.TestCase):
         b = (x for x in (y for y in a))
         self.assertEqual(sum(b), sum([x for x in range(10)]))
 
-        self.assertEqual(
-            sum(x ** 2 for x in range(10)), sum([x ** 2 for x in range(10)])
-        )
+        self.assertEqual(sum(x**2 for x in range(10)), sum([x**2 for x in range(10)]))
         self.assertEqual(
             sum(x * x for x in range(10) if x % 2),
             sum([x * x for x in range(10) if x % 2]),

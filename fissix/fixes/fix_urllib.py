@@ -2,6 +2,7 @@
    This is rather similar to fix_imports, but because of the more
    complex nature of the fixing for urllib, it has its own fixer.
 """
+
 # Author: Nick Edds
 
 # Local imports
@@ -29,6 +30,7 @@ MAPPING = {
                 "urlcleanup",
                 "pathname2url",
                 "url2pathname",
+                "getproxies",
             ],
         ),
         (
@@ -125,13 +127,14 @@ def build_pattern():
 
 
 class FixUrllib(FixImports):
+
     def build_pattern(self):
         return "|".join(build_pattern())
 
     def transform_import(self, node, results):
         """Transform for the basic import case. Replaces the old
-           import name with a comma separated list of its
-           replacements.
+        import name with a comma separated list of its
+        replacements.
         """
         import_mod = results.get("module")
         pref = import_mod.prefix
@@ -146,8 +149,8 @@ class FixUrllib(FixImports):
 
     def transform_member(self, node, results):
         """Transform for imports of specific module elements. Replaces
-           the module to be imported from with the appropriate new
-           module.
+        the module to be imported from with the appropriate new
+        module.
         """
         mod_member = results.get("mod_member")
         pref = mod_member.prefix

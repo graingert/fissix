@@ -16,7 +16,6 @@ __author__ = "Guido van Rossum <guido@python.org>"
 __all__ = ["Driver", "load_grammar"]
 
 # Python imports
-import codecs
 import io
 import os
 import logging
@@ -28,6 +27,7 @@ from . import grammar, parse, token, tokenize, pgen
 
 
 class Driver(object):
+
     def __init__(self, grammar, convert=None, logger=None):
         self.grammar = grammar
         if logger is None:

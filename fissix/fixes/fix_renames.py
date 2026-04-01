@@ -3,6 +3,7 @@
 Fixes:
   * sys.maxint -> sys.maxsize
 """
+
 # Author: Christian Heimes
 # based on Collin Winter's fix_import
 
@@ -10,7 +11,9 @@ Fixes:
 from .. import fixer_base
 from ..fixer_util import Name, attr_chain
 
-MAPPING = {"sys": {"maxint": "maxsize"}}
+MAPPING = {
+    "sys": {"maxint": "maxsize"},
+}
 LOOKUP = {}
 
 
