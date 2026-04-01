@@ -24,10 +24,10 @@ import test.support
 import unittest
 
 # Local imports
-from lib2to3.pgen2 import driver as pgen2_driver
-from lib2to3.pgen2 import tokenize
-from lib2to3.pgen2.parse import ParseError
-from lib2to3.pygram import python_symbols as syms
+from fissix.pgen2 import driver as pgen2_driver
+from fissix.pgen2 import tokenize
+from fissix.pgen2.parse import ParseError
+from fissix.pygram import python_symbols as syms
 
 
 class TestDriver(support.TestCase):
@@ -87,12 +87,12 @@ class TestPgen2Caching(support.TestCase):
             sub_env = dict(os.environ)
             sub_env["PYTHONHASHSEED"] = "random"
             code = """
-from lib2to3.pgen2 import driver as pgen2_driver
+from fissix.pgen2 import driver as pgen2_driver
 pgen2_driver.load_grammar(%r, save=True, force=True)
             """ % (
                 grammar_sub_copy,
             )
-            cmd = [sys.executable, "-Wignore:lib2to3:DeprecationWarning", "-c", code]
+            cmd = [sys.executable, "-Wignore:fissix:DeprecationWarning", "-c", code]
             subprocess.check_call(cmd, env=sub_env)
             self.assertTrue(os.path.exists(pickle_sub_name))
 

@@ -6,7 +6,7 @@ from itertools import chain
 from operator import itemgetter
 
 # Local imports
-from lib2to3 import pygram, fixer_util
+from fissix import pygram, fixer_util
 from test.test_lib2to3 import support
 
 
@@ -14,7 +14,7 @@ class FixerTestCase(support.TestCase):
 
     # Other test cases can subclass this class and replace "fixer_pkg" with
     # their own.
-    def setUp(self, fix_list=None, fixer_pkg="lib2to3", options=None):
+    def setUp(self, fix_list=None, fixer_pkg="fissix", options=None):
         if fix_list is None:
             fix_list = [self.fixer]
         self.refactor = support.get_refactorer(fixer_pkg, fix_list, options)
@@ -54,7 +54,7 @@ class FixerTestCase(support.TestCase):
     def assert_runs_after(self, *names):
         fixes = [self.fixer]
         fixes.extend(names)
-        r = support.get_refactorer("lib2to3", fixes)
+        r = support.get_refactorer("fissix", fixes)
         (pre, post) = r.get_fixers()
         n = "fix_" + self.fixer
         if post and post[-1].__class__.__module__.endswith(n):
@@ -1837,7 +1837,7 @@ class ImportsFixerTests:
 
 class Test_imports(FixerTestCase, ImportsFixerTests):
     fixer = "imports"
-    from lib2to3.fixes.fix_imports import MAPPING as modules
+    from fissix.fixes.fix_imports import MAPPING as modules
 
     def test_multiple_imports(self):
         b = """import urlparse, cStringIO"""
@@ -1858,17 +1858,17 @@ class Test_imports(FixerTestCase, ImportsFixerTests):
 
 class Test_imports2(FixerTestCase, ImportsFixerTests):
     fixer = "imports2"
-    from lib2to3.fixes.fix_imports2 import MAPPING as modules
+    from fissix.fixes.fix_imports2 import MAPPING as modules
 
 
 class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
 
     def setUp(self):
         super(Test_imports_fixer_order, self).setUp(["imports", "imports2"])
-        from lib2to3.fixes.fix_imports2 import MAPPING as mapping2
+        from fissix.fixes.fix_imports2 import MAPPING as mapping2
 
         self.modules = mapping2.copy()
-        from lib2to3.fixes.fix_imports import MAPPING as mapping1
+        from fissix.fixes.fix_imports import MAPPING as mapping1
 
         for key in ("dbhash", "dumbdbm", "dbm", "gdbm"):
             self.modules[key] = mapping1[key]
@@ -1881,7 +1881,7 @@ class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
 
 class Test_urllib(FixerTestCase):
     fixer = "urllib"
-    from lib2to3.fixes.fix_urllib import MAPPING as modules
+    from fissix.fixes.fix_urllib import MAPPING as modules
 
     def test_import_module(self):
         for old, changes in self.modules.items():
@@ -3926,12 +3926,12 @@ class Test_import(FixerTestCase):
             self.files_checked.append(name)
             return self.always_exists or (name in self.present_files)
 
-        from lib2to3.fixes import fix_import
+        from fissix.fixes import fix_import
 
         fix_import.exists = fake_exists
 
     def tearDown(self):
-        from lib2to3.fixes import fix_import
+        from fissix.fixes import fix_import
 
         fix_import.exists = os.path.exists
 

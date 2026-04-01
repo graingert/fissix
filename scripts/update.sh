@@ -34,6 +34,9 @@ git -C cpython clean -xfd
 rsync -av --exclude=__init__.py cpython/Lib/lib2to3/ fissix/
 rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
+# replace lib2to3 references with fissix
+find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
+
 # reformat lib2to3, ignore any failures
 .venv/bin/python -m black --fast fissix/ || true
 

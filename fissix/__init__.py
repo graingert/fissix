@@ -2,7 +2,7 @@
 # Licensed under the PSF license V2
 
 """
-Monkeypatches to override default behavior of lib2to3.
+Monkeypatches to override default behavior of fissix.
 """
 
 import logging
