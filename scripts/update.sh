@@ -22,7 +22,9 @@ if ! git diff-index --quiet HEAD --; then
 fi
 
 # switch to base branch, and discard local commits
-git checkout -f base
+git fetch origin base:refs/remotes/origin/base
+# idempotent: works whether or not `base` already exists
+git checkout -B base origin/base
 git reset --hard origin/base
 
 # update cpython to latest 3.12

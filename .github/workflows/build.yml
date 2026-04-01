@@ -55,8 +55,6 @@ jobs:
         run: |
           git config user.email "ci@github.com"
           git config user.name "CI"
-          git checkout -b base origin/base
-          git checkout -
       - name: Set Up Python
         uses: actions/setup-python@v6
         with:
