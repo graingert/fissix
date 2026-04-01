@@ -21,6 +21,10 @@ if ! git diff-index --quiet HEAD --; then
     finish 1 "ERROR: local changes present; stash or commit then retry"
 fi
 
+# save patches to a temp dir before switching branches (scripts/ doesn't exist on base)
+PATCHES_DIR=$(mktemp -d)
+cp scripts/patches/*.patch "$PATCHES_DIR/"
+
 # switch to base branch, and discard local commits
 git fetch origin base:refs/remotes/origin/base
 # idempotent: works whether or not `base` already exists
@@ -102,11 +106,11 @@ driver.load_grammar = load_grammar
 FISSIX_INIT
 
 # apply fissix-specific patches before renaming lib2to3 -> fissix
-patch -p0 < scripts/patches/tokenize_async_with.patch
-patch -p0 < scripts/patches/main_commonpath.patch
-patch -p0 < scripts/patches/test_fixers_support_import.patch
-patch -p0 < scripts/patches/test_main_xfail.patch
-patch -p0 < scripts/patches/test_parser_xfail.patch
+patch -p0 < "$PATCHES_DIR/tokenize_async_with.patch"
+patch -p0 < "$PATCHES_DIR/main_commonpath.patch"
+patch -p0 < "$PATCHES_DIR/test_fixers_support_import.patch"
+patch -p0 < "$PATCHES_DIR/test_main_xfail.patch"
+patch -p0 < "$PATCHES_DIR/test_parser_xfail.patch"
 
 # replace lib2to3 references with fissix
 find fissix/ -name "*.py" -exec sed -i 's/\blib2to3\b/fissix/g' {} +
