@@ -12,7 +12,7 @@ especially when debugging a test.
 # Testing imports
 from . import support
 
-from fissix import pytree
+from lib2to3 import pytree
 
 try:
     sorted

@@ -6,8 +6,8 @@
 # Author: Nick Edds
 
 # Local imports
-from fissix.fixes.fix_imports import alternates, FixImports
-from fissix.fixer_util import (
+from lib2to3.fixes.fix_imports import alternates, FixImports
+from lib2to3.fixer_util import (
     Name,
     Comma,
     FromImport,
@@ -83,7 +83,6 @@ MAPPING = {
                 "FTPHandler",
                 "CacheFTPHandler",
                 "UnknownHandler",
-                "__version__",
             ],
         ),
         ("urllib.error", ["URLError", "HTTPError"]),
@@ -128,6 +127,7 @@ def build_pattern():
 
 
 class FixUrllib(FixImports):
+
     def build_pattern(self):
         return "|".join(build_pattern())
 

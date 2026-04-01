@@ -9,9 +9,7 @@ import sys
 import tempfile
 import unittest
 
-import pytest
-
-from fissix import main
+from lib2to3 import main
 
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -19,6 +17,7 @@ PY2_TEST_MODULE = os.path.join(TEST_DATA_DIR, "py2_test_grammar.py")
 
 
 class TestMain(unittest.TestCase):
+
     def setUp(self):
         self.temp_dir = None  # tearDown() will rmtree this directory if set.
 
@@ -36,7 +35,7 @@ class TestMain(unittest.TestCase):
         sys.stdout = out_capture
         sys.stderr = err_capture
         try:
-            return main.main("fissix.fixes", args)
+            return main.main("lib2to3.fixes", args)
         finally:
             sys.stdin = save_stdin
             sys.stdout = save_stdout
@@ -75,7 +74,6 @@ class TestMain(unittest.TestCase):
             trivial.write("print 'I need a simple conversion.'")
         self.setup_files.append("trivial.py")
 
-    @pytest.mark.xfail
     def test_filename_changing_on_output_single_dir(self):
         """2to3 a single directory with a new output dir and suffix."""
         self.setup_test_source_trees()
@@ -122,7 +120,6 @@ class TestMain(unittest.TestCase):
         self.assertRegex(stderr, r"No changes to .*/__init__\.py".replace("/", sep))
         self.assertNotRegex(stderr, r"No changes to .*/trivial\.py".replace("/", sep))
 
-    @pytest.mark.xfail
     def test_filename_changing_on_output_two_files(self):
         """2to3 two files in one directory with a new output dir."""
         self.setup_test_source_trees()
@@ -152,7 +149,6 @@ class TestMain(unittest.TestCase):
         )
         self.assertEqual(expected_files, set(os.listdir(self.py3_dest_dir)))
 
-    @pytest.mark.xfail
     def test_filename_changing_on_output_single_file(self):
         """2to3 a single file with a new output dir."""
         self.setup_test_source_trees()

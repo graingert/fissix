@@ -1,5 +1,5 @@
-from fissix.fixer_base import BaseFix
-from fissix.fixer_util import Name
+from lib2to3.fixer_base import BaseFix
+from lib2to3.fixer_util import Name
 
 
 class FixParrot(BaseFix):

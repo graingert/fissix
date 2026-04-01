@@ -1,4 +1,4 @@
 import sys
 from .main import main
 
-sys.exit(main("fissix.fixes"))
+sys.exit(main("lib2to3.fixes"))

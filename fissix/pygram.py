@@ -17,6 +17,7 @@ _PATTERN_GRAMMAR_FILE = os.path.join(os.path.dirname(__file__), "PatternGrammar.
 
 
 class Symbols(object):
+
     def __init__(self, grammar):
         """Initializer.
 
@@ -27,7 +28,7 @@ class Symbols(object):
             setattr(self, name, symbol)
 
 
-python_grammar = driver.load_packaged_grammar("fissix", _GRAMMAR_FILE)
+python_grammar = driver.load_packaged_grammar("lib2to3", _GRAMMAR_FILE)
 
 python_symbols = Symbols(python_grammar)
 
@@ -37,5 +38,5 @@ del python_grammar_no_print_statement.keywords["print"]
 python_grammar_no_print_and_exec_statement = python_grammar_no_print_statement.copy()
 del python_grammar_no_print_and_exec_statement.keywords["exec"]
 
-pattern_grammar = driver.load_packaged_grammar("fissix", _PATTERN_GRAMMAR_FILE)
+pattern_grammar = driver.load_packaged_grammar("lib2to3", _PATTERN_GRAMMAR_FILE)
 pattern_symbols = Symbols(pattern_grammar)

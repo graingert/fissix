@@ -11,8 +11,8 @@ import tempfile
 import shutil
 import unittest
 
-from fissix import refactor, pygram, fixer_base
-from fissix.pgen2 import token
+from lib2to3 import refactor, pygram, fixer_base
+from lib2to3.pgen2 import token
 
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
@@ -24,10 +24,11 @@ try:
 finally:
     sys.path.pop()
 
-_2TO3_FIXERS = refactor.get_fixers_from_package("fissix.fixes")
+_2TO3_FIXERS = refactor.get_fixers_from_package("lib2to3.fixes")
 
 
 class TestRefactoringTool(unittest.TestCase):
+
     def setUp(self):
         sys.path.append(FIXER_DIR)
 
@@ -164,7 +165,9 @@ from __future__ import print_function"""
         self.assertEqual(str(tree), input)
 
     def test_refactor_stdin(self):
+
         class MyRT(refactor.RefactoringTool):
+
             def print_output(self, old_text, new_text, filename, equal):
                 results.extend([old_text, new_text, filename, equal])
 
@@ -303,7 +306,7 @@ from __future__ import print_function"""
         os.linesep = "\r\n"
         try:
             fn = os.path.join(TEST_DATA_DIR, "crlf.py")
-            fixes = refactor.get_fixers_from_package("fissix.fixes")
+            fixes = refactor.get_fixers_from_package("lib2to3.fixes")
             self.check_file_refactoring(fn, fixes)
         finally:
             os.linesep = old_sep

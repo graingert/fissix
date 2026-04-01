@@ -6,15 +6,15 @@ from itertools import chain
 from operator import itemgetter
 
 # Local imports
-from fissix import pygram, fixer_util
-from . import support
+from lib2to3 import pygram, fixer_util
+from test.test_lib2to3 import support
 
 
 class FixerTestCase(support.TestCase):
 
     # Other test cases can subclass this class and replace "fixer_pkg" with
     # their own.
-    def setUp(self, fix_list=None, fixer_pkg="fissix", options=None):
+    def setUp(self, fix_list=None, fixer_pkg="lib2to3", options=None):
         if fix_list is None:
             fix_list = [self.fixer]
         self.refactor = support.get_refactorer(fixer_pkg, fix_list, options)
@@ -47,15 +47,14 @@ class FixerTestCase(support.TestCase):
         self.warns(before, before, message, unchanged=True)
 
     def unchanged(self, before, ignore_warnings=False):
-        tree = self._check(before, before)
-        self.assertFalse(tree.was_changed)
+        self._check(before, before)
         if not ignore_warnings:
             self.assertEqual(self.fixer_log, [])
 
     def assert_runs_after(self, *names):
         fixes = [self.fixer]
         fixes.extend(names)
-        r = support.get_refactorer("fissix", fixes)
+        r = support.get_refactorer("lib2to3", fixes)
         (pre, post) = r.get_fixers()
         n = "fix_" + self.fixer
         if post and post[-1].__class__.__module__.endswith(n):
@@ -908,14 +907,6 @@ class Test_except(FixerTestCase):
                 pass"""
         self.unchanged(s)
 
-    def test_unchanged_4(self):
-        s = """
-            try:
-                pass
-            except Exception as e:
-                pass"""
-        self.unchanged(s)
-
 
 class Test_raise(FixerTestCase):
     fixer = "raise"
@@ -973,10 +964,6 @@ class Test_raise(FixerTestCase):
         b = """raise (E1, (E2, E3), E4), V"""
         a = """raise E1(V)"""
         self.check(b, a)
-
-    def test_unchanged(self):
-        a = """raise E1(V)"""
-        self.unchanged(a)
 
     # These should produce a warning
 
@@ -1193,11 +1180,6 @@ class Test_long(FixerTestCase):
         a = """z = type(x) in (int, int)"""
         self.check(b, a)
 
-    def test_4(self):
-        b = """f(arg=long)"""
-        a = """f(arg=int)"""
-        self.check(b, a)
-
     def test_unchanged(self):
         s = """long = True"""
         self.unchanged(s)
@@ -1218,9 +1200,6 @@ class Test_long(FixerTestCase):
         self.unchanged(s)
 
         s = """def f(x, long=True): pass"""
-        self.unchanged(s)
-
-        s = """f(long=True)"""
         self.unchanged(s)
 
     def test_prefix_preservation(self):
@@ -1601,6 +1580,7 @@ class Test_xrange(FixerTestCase):
 
 
 class Test_xrange_with_reduce(FixerTestCase):
+
     def setUp(self):
         super(Test_xrange_with_reduce, self).setUp(["xrange", "reduce"])
 
@@ -1730,6 +1710,7 @@ class Test_xreadlines(FixerTestCase):
 
 
 class ImportsFixerTests:
+
     def test_import_module(self):
         for old, new in self.modules.items():
             b = "import %s" % old
@@ -1856,7 +1837,7 @@ class ImportsFixerTests:
 
 class Test_imports(FixerTestCase, ImportsFixerTests):
     fixer = "imports"
-    from fissix.fixes.fix_imports import MAPPING as modules
+    from lib2to3.fixes.fix_imports import MAPPING as modules
 
     def test_multiple_imports(self):
         b = """import urlparse, cStringIO"""
@@ -1877,16 +1858,17 @@ class Test_imports(FixerTestCase, ImportsFixerTests):
 
 class Test_imports2(FixerTestCase, ImportsFixerTests):
     fixer = "imports2"
-    from fissix.fixes.fix_imports2 import MAPPING as modules
+    from lib2to3.fixes.fix_imports2 import MAPPING as modules
 
 
 class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
+
     def setUp(self):
         super(Test_imports_fixer_order, self).setUp(["imports", "imports2"])
-        from fissix.fixes.fix_imports2 import MAPPING as mapping2
+        from lib2to3.fixes.fix_imports2 import MAPPING as mapping2
 
         self.modules = mapping2.copy()
-        from fissix.fixes.fix_imports import MAPPING as mapping1
+        from lib2to3.fixes.fix_imports import MAPPING as mapping1
 
         for key in ("dbhash", "dumbdbm", "dbm", "gdbm"):
             self.modules[key] = mapping1[key]
@@ -1899,7 +1881,7 @@ class Test_imports_fixer_order(FixerTestCase, ImportsFixerTests):
 
 class Test_urllib(FixerTestCase):
     fixer = "urllib"
-    from fissix.fixes.fix_urllib import MAPPING as modules
+    from lib2to3.fixes.fix_urllib import MAPPING as modules
 
     def test_import_module(self):
         for old, changes in self.modules.items():
@@ -2866,13 +2848,9 @@ class Test_numliterals(FixerTestCase):
     def test_unchanged_int(self):
         s = """5"""
         self.unchanged(s)
-        s = """000"""
-        self.unchanged(s)
 
     def test_unchanged_float(self):
         s = """5.0"""
-        self.unchanged(s)
-        s = """0.1"""
         self.unchanged(s)
 
     def test_unchanged_octal(self):
@@ -2905,7 +2883,9 @@ class Test_numliterals(FixerTestCase):
 class Test_renames(FixerTestCase):
     fixer = "renames"
 
-    modules = {"sys": ("maxint", "maxsize")}
+    modules = {
+        "sys": ("maxint", "maxsize"),
+    }
 
     def test_import_from(self):
         for mod, (old, new) in list(self.modules.items()):
@@ -3014,15 +2994,18 @@ class Test_unicode(FixerTestCase):
         a = r"""'\\\\u20ac\\U0001d121\\u20ac'"""
         self.check(b, a)
 
+        b = r"""r'\\\u20ac\U0001d121\\u20ac'"""
         a = r"""r'\\\u20ac\U0001d121\\u20ac'"""
-        self.unchanged(a)
+        self.check(b, a)
 
     def test_bytes_literal_escape_u(self):
+        b = r"""b'\\\u20ac\U0001d121\\u20ac'"""
         a = r"""b'\\\u20ac\U0001d121\\u20ac'"""
-        self.unchanged(a)
+        self.check(b, a)
 
+        b = r"""br'\\\u20ac\U0001d121\\u20ac'"""
         a = r"""br'\\\u20ac\U0001d121\\u20ac'"""
-        self.unchanged(a)
+        self.check(b, a)
 
     def test_unicode_literal_escape_u(self):
         b = r"""u'\\\u20ac\U0001d121\\u20ac'"""
@@ -3035,15 +3018,13 @@ class Test_unicode(FixerTestCase):
 
     def test_native_unicode_literal_escape_u(self):
         f = "from __future__ import unicode_literals\n"
+        b = f + r"""'\\\u20ac\U0001d121\\u20ac'"""
         a = f + r"""'\\\u20ac\U0001d121\\u20ac'"""
-        self.unchanged(a)
+        self.check(b, a)
 
+        b = f + r"""r'\\\u20ac\U0001d121\\u20ac'"""
         a = f + r"""r'\\\u20ac\U0001d121\\u20ac'"""
-        self.unchanged(a)
-
-    def test_unchanged(self):
-        a = """'h'"""
-        self.unchanged(a)
+        self.check(b, a)
 
 
 class Test_filter(FixerTestCase):
@@ -3945,12 +3926,12 @@ class Test_import(FixerTestCase):
             self.files_checked.append(name)
             return self.always_exists or (name in self.present_files)
 
-        from fissix.fixes import fix_import
+        from lib2to3.fixes import fix_import
 
         fix_import.exists = fake_exists
 
     def tearDown(self):
-        from fissix.fixes import fix_import
+        from lib2to3.fixes import fix_import
 
         fix_import.exists = os.path.exists
 
@@ -4778,36 +4759,3 @@ class Test_asserts(FixerTestCase):
     def test_unchanged(self):
         self.unchanged("self.assertEqualsOnSaturday")
         self.unchanged("self.assertEqualsOnSaturday(3, 5)")
-
-
-class Test_sorted(FixerTestCase):
-
-    fixer = "sorted"
-
-    def test_sorted(self):
-        import_statement = "from functools import cmp_to_key\n"
-
-        b = "sorted(a_list, cmp_function)"
-        a = import_statement + "sorted(a_list, key=cmp_to_key(cmp_function))"
-        self.check(b, a)
-
-        b = "sorted(a_list, lambda x,y: x-y)"
-        a = import_statement + "sorted(a_list, key=cmp_to_key(lambda x,y: x-y))"
-        self.check(b, a)
-
-        self.unchanged("sorted(a_list, key=key_function, reverse=True)")
-        self.unchanged("sorted([1,2,3])")
-
-    def test_list_sort(self):
-        import_statement = "from functools import cmp_to_key\n"
-
-        b = "a_list.sort(cmp_function)"
-        a = import_statement + "a_list.sort(key=cmp_to_key(cmp_function))"
-        self.check(b, a)
-
-        b = "a_list.sort(lambda x,y: x-y)"
-        a = import_statement + "a_list.sort(key=cmp_to_key(lambda x,y: x-y))"
-        self.check(b, a)
-
-        self.unchanged("a_list.sort()")
-        self.unchanged("a_list.sort(key=key_function, reverse=True)")

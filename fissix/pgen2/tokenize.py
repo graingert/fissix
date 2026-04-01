@@ -30,8 +30,8 @@ __credits__ = "GvR, ESR, Tim Peters, Thomas Wouters, Fred Drake, Skip Montanaro"
 
 import string, re
 from codecs import BOM_UTF8, lookup
+from lib2to3.pgen2.token import *
 
-from .token import *
 from . import token
 
 __all__ = [x for x in dir(token) if x[0] != "_"] + [
@@ -206,6 +206,7 @@ def tokenize_loop(readline, tokeneater):
 
 
 class Untokenizer:
+
     def __init__(self):
         self.tokens = []
         self.prev_row = 1
@@ -592,11 +593,12 @@ def generate_tokens(readline):
                         stashed = tok
                         continue
 
-                    if token == "def":
+                    if token in ("def", "for"):
                         if stashed and stashed[0] == NAME and stashed[1] == "async":
 
-                            async_def = True
-                            async_def_indent = indents[-1]
+                            if token == "def":
+                                async_def = True
+                                async_def_indent = indents[-1]
 
                             yield (
                                 ASYNC,
