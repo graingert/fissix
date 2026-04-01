@@ -31,7 +31,7 @@ git -C cpython checkout -f 3.12
 git -C cpython clean -xfd
 
 # copy from cpython
-rsync -av cpython/Lib/lib2to3/ fissix/
+rsync -av --exclude=__init__.py cpython/Lib/lib2to3/ fissix/
 rsync -av cpython/Lib/test/test_lib2to3/ fissix/tests/
 
 # reformat lib2to3, ignore any failures
