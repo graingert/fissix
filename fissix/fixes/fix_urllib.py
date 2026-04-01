@@ -83,7 +83,6 @@ MAPPING = {
                 "FTPHandler",
                 "CacheFTPHandler",
                 "UnknownHandler",
-                "__version__",
             ],
         ),
         ("urllib.error", ["URLError", "HTTPError"]),
@@ -128,6 +127,7 @@ def build_pattern():
 
 
 class FixUrllib(FixImports):
+
     def build_pattern(self):
         return "|".join(build_pattern())
 

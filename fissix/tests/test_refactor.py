@@ -27,6 +27,7 @@ _2TO3_FIXERS = refactor.get_fixers_from_package("fissix.fixes")
 
 
 class TestRefactoringTool(unittest.TestCase):
+
     def setUp(self):
         sys.path.append(FIXER_DIR)
 
@@ -163,7 +164,9 @@ from __future__ import print_function"""
         self.assertEqual(str(tree), input)
 
     def test_refactor_stdin(self):
+
         class MyRT(refactor.RefactoringTool):
+
             def print_output(self, old_text, new_text, filename, equal):
                 results.extend([old_text, new_text, filename, equal])
 
