@@ -55,6 +55,15 @@ jobs:
         run: |
           git config user.email "ci@github.com"
           git config user.name "CI"
+          # For PRs, fetch base from the source fork (not origin=amyreese/fissix)
+          HEAD_REPO="${{ github.event.pull_request.head.repo.clone_url }}"
+          if [[ -n "$HEAD_REPO" ]]; then
+            git remote add head-fork "$HEAD_REPO"
+            echo "BASE_REMOTE=head-fork" >> "$GITHUB_ENV"
+          fi
+          # amyreese/fissix:base points to cpython 3.9; graingert/fissix:base has 3.12.
+          # Add graingert as a remote so update.sh can fetch the correct base.
+          git remote add graingert https://github.com/graingert/fissix
       - name: Install system deps
         run: |
           sudo apt-get update
@@ -68,6 +77,8 @@ jobs:
           python -m venv .venv
           .venv/bin/pip install black==26.3.1 -q
       - name: Run update.sh and ensure no diffs
+        env:
+          BASE_REMOTE: graingert
         run: |
           set -euo pipefail
           bash scripts/update.sh

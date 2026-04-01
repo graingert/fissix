@@ -25,11 +25,16 @@ fi
 PATCHES_DIR=$(mktemp -d)
 cp scripts/patches/*.patch "$PATCHES_DIR/"
 
+# BASE_REMOTE: remote that owns the `base` branch with the correct cpython submodule.
+# Defaults to `origin`. In CI against amyreese/fissix, set BASE_REMOTE=graingert so
+# we use the 3.12-based cpython rather than amyreese's old 3.9 pointer.
+BASE_REMOTE=${BASE_REMOTE:-origin}
+
 # switch to base branch, and discard local commits
-git fetch origin base:refs/remotes/origin/base
+git fetch "$BASE_REMOTE" base:refs/remotes/"$BASE_REMOTE"/base
 # idempotent: works whether or not `base` already exists
-git checkout -B base origin/base
-git reset --hard origin/base
+git checkout -B base "$BASE_REMOTE"/base
+git reset --hard "$BASE_REMOTE"/base
 
 # update cpython to latest 3.12
 git submodule update --init
