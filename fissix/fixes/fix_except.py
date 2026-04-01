@@ -55,7 +55,7 @@ class FixExcept(fixer_base.BaseFix):
         try_cleanup = [ch.clone() for ch in results["cleanup"]]
         for except_clause, e_suite in find_excepts(try_cleanup):
             if len(except_clause.children) == 4:
-                (E, comma, N) = except_clause.children[1:4]
+                E, comma, N = except_clause.children[1:4]
                 comma.replace(Name("as", prefix=" "))
 
                 if N.type != token.NAME:

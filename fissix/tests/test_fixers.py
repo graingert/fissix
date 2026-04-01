@@ -1,4 +1,4 @@
-""" Test suite for the fixer modules """
+"""Test suite for the fixer modules"""
 
 # Python imports
 import os
@@ -55,7 +55,7 @@ class FixerTestCase(support.TestCase):
         fixes = [self.fixer]
         fixes.extend(names)
         r = support.get_refactorer("fissix", fixes)
-        (pre, post) = r.get_fixers()
+        pre, post = r.get_fixers()
         n = "fix_" + self.fixer
         if post and post[-1].__class__.__module__.endswith(n):
             # We're the last fixer to run
@@ -1794,9 +1794,7 @@ class ImportsFixerTests:
             s = """
                 def f():
                     %s.method()
-                """ % (
-                old,
-            )
+                """ % (old,)
             self.unchanged(s)
 
             # test nested usage
