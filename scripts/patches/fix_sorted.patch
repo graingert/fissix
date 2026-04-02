@@ -1,18 +1,15 @@
 diff --git a/fissix/fixes/fix_sorted.py b/fissix/fixes/fix_sorted.py
 new file mode 100644
-index 0000000..b8520b9
+index 0000000..c82d09a
 --- /dev/null
 +++ b/fissix/fixes/fix_sorted.py
-@@ -0,0 +1,100 @@
+@@ -0,0 +1,97 @@
++from itertools import filterfalse
++
 +from .. import fixer_base
 +from ..fixer_util import Call, Comma, KeywordArg, Name, Node, touch_import
 +from ..pgen2 import token
 +from ..pygram import python_symbols as symbols
-+
-+try:
-+    from itertools import filterfalse
-+except ImportError:
-+    from itertools import ifilterfalse as filterfalse
 +
 +
 +class FixSorted(fixer_base.BaseFix):
