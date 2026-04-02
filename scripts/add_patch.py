@@ -104,8 +104,11 @@ def generate_patch(base_dir: Path, changed_files: list[str]) -> str:
     return "\n".join(parts)
 
 
-def add_to_patches_list(patch_filename: str) -> None:
-    """Append patch_filename to the PATCHES list in update.py."""
+def add_to_patches_list(patch_filename: str) -> bool:
+    """Append patch_filename to the PATCHES list in update.py.
+
+    Returns True on success, False if the PATCHES list could not be found.
+    """
     content = UPDATE_PY.read_text()
 
     # Find the PATCHES list and insert before the closing bracket
@@ -113,17 +116,18 @@ def add_to_patches_list(patch_filename: str) -> None:
     match = pattern.search(content)
     if not match:
         logger.error("Could not find PATCHES list in update.py")
-        sys.exit(1)
+        return False
 
     before_bracket = match.group(1).rstrip()
     # Check if already present
     if f'"{patch_filename}"' in before_bracket:
         logger.info("%s already in PATCHES list", patch_filename)
-        return
+        return True
 
     new_content = content[:match.start()] + before_bracket + f'\n    "{patch_filename}",\n' + match.group(2) + content[match.end():]
     UPDATE_PY.write_text(new_content)
     logger.info("Added %s to PATCHES list in update.py", patch_filename)
+    return True
 
 
 def main() -> int:
@@ -167,7 +171,8 @@ def main() -> int:
     logger.info("Wrote %s", patch_path.relative_to(REPO_ROOT))
 
     # 5. Add to PATCHES list
-    add_to_patches_list(patch_filename)
+    if not add_to_patches_list(patch_filename):
+        return 1
 
     logger.info("Done. Verify with:  python scripts/update.py --check")
     return 0
