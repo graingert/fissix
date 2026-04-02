@@ -19,12 +19,15 @@ pipeline (copy → rename → format → patch).
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPTS_DIR = REPO_ROOT / "scripts"
@@ -109,21 +112,23 @@ def add_to_patches_list(patch_filename: str) -> None:
     pattern = re.compile(r"(PATCHES\s*=\s*\[.*?)(])", re.DOTALL)
     match = pattern.search(content)
     if not match:
-        print("ERROR: Could not find PATCHES list in update.py", file=sys.stderr)
+        logger.error("Could not find PATCHES list in update.py")
         sys.exit(1)
 
     before_bracket = match.group(1).rstrip()
     # Check if already present
     if f'"{patch_filename}"' in before_bracket:
-        print(f"  {patch_filename} already in PATCHES list")
+        logger.info("%s already in PATCHES list", patch_filename)
         return
 
     new_content = content[:match.start()] + before_bracket + f'\n    "{patch_filename}",\n' + match.group(2) + content[match.end():]
     UPDATE_PY.write_text(new_content)
-    print(f"  Added {patch_filename} to PATCHES list in update.py")
+    logger.info("Added %s to PATCHES list in update.py", patch_filename)
 
 
 def main() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "patch_name",
@@ -137,21 +142,21 @@ def main() -> int:
     # 1. Find changed fissix/ files in HEAD
     changed = get_head_fissix_files()
     if not changed:
-        print("HEAD commit has no changes to fissix/", file=sys.stderr)
+        logger.error("HEAD commit has no changes to fissix/")
         return 1
-    print(f"HEAD commit touches: {', '.join(changed)}")
+    logger.info("HEAD commit touches: %s", ", ".join(changed))
 
     # 2. Build unpatched baseline
     base_dir = Path(tempfile.mkdtemp(prefix="fissix-base-"))
     try:
-        print("Building unpatched baseline …")
+        logger.info("Building unpatched baseline …")
         build_unpatched_base(base_dir)
 
         # 3. Generate patch
-        print("Generating patch …")
+        logger.info("Generating patch …")
         patch_content = generate_patch(base_dir, changed)
         if not patch_content.strip():
-            print("No differences found — HEAD changes may already be in the sync output", file=sys.stderr)
+            logger.error("No differences found — HEAD changes may already be in the sync output")
             return 1
     finally:
         shutil.rmtree(base_dir, ignore_errors=True)
@@ -159,12 +164,12 @@ def main() -> int:
     # 4. Write patch file
     PATCHES_DIR.mkdir(parents=True, exist_ok=True)
     patch_path.write_text(patch_content)
-    print(f"  Wrote {patch_path.relative_to(REPO_ROOT)}")
+    logger.info("Wrote %s", patch_path.relative_to(REPO_ROOT))
 
     # 5. Add to PATCHES list
     add_to_patches_list(patch_filename)
 
-    print(f"\nDone. Verify with:  python scripts/update.py --check")
+    logger.info("Done. Verify with:  python scripts/update.py --check")
     return 0
 
 
