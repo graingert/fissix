@@ -70,18 +70,10 @@ def _cpython_py_version() -> str:
 
 
 def _cpython_rev() -> str:
-    # Try a full describe first; fall back to --always so shallow clones
-    # (e.g. CI) still produce a meaningful identifier.
-    result = subprocess.run(
-        ["git", "describe"],
-        cwd=CPYTHON_DIR,
-        capture_output=True,
-        text=True,
-    )
-    if result.returncode == 0:
-        return result.stdout.strip()
+    # Use --abbrev=12 to pin the hash length; the default minimum-unique
+    # abbreviation varies between environments and causes spurious diffs.
     return subprocess.check_output(
-        ["git", "describe", "--always"],
+        ["git", "describe", "--abbrev=12"],
         cwd=CPYTHON_DIR,
         text=True,
     ).strip()
@@ -355,13 +347,23 @@ def main() -> int:
     args = parser.parse_args()
 
     if args.check:
-        # Check mode: use the committed submodule ref as-is.  Just ensure it
-        # is initialised (no fetch, no branch advancement).
+        # Check mode: use the committed submodule ref as-is.  Initialise it
+        # and unshallow if needed so that git describe has access to tag
+        # history (CI checks out submodules with --depth=1).
         subprocess.run(
             ["git", "submodule", "update", "--init"],
             cwd=REPO_ROOT,
             check=True,
         )
+        is_shallow = subprocess.check_output(
+            ["git", "-C", str(CPYTHON_DIR), "rev-parse", "--is-shallow-repository"],
+            text=True,
+        ).strip()
+        if is_shallow == "true":
+            subprocess.run(
+                ["git", "-C", str(CPYTHON_DIR), "fetch", "--unshallow"],
+                check=True,
+            )
         with tempfile.TemporaryDirectory() as _tmp:
             tmp_root = Path(_tmp)
             print("Syncing lib2to3 into temporary directory …")

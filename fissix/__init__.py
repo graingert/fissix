@@ -18,7 +18,7 @@ from .__version__ import __version__
 from .pgen2 import driver, grammar, pgen
 
 __base_version__ = "3.12.13+"
-__base_revision__ = "v3.12.13-5-g7f2d89a444b"
+__base_revision__ = "v3.12.13-5-g7f2d89a444bb"
 
 CACHE_DIR = Path(user_cache_dir("fissix", version=__version__))
 
