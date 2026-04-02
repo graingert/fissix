@@ -254,17 +254,20 @@ def update_submodule() -> None:
         check=True,
     )
 
-    # Fetch both the branch (if it still exists) and all v3.12.* tags.
+    # Fetch all v3.12.* tags (always succeeds even post-EOL).
+    subprocess.run(
+        ["git", "-C", str(CPYTHON_DIR), "fetch", "--tags", "origin"],
+        check=True,
+    )
+
+    # Try to fetch the live branch; ignore failure — it will be deleted at EOL.
     subprocess.run(
         [
             "git", "-C", str(CPYTHON_DIR), "fetch",
-            "--tags",
             "origin",
-            # refspec: fetch the branch tip into a local remote-tracking ref;
-            # silently ignored by git if the branch no longer exists
             "+refs/heads/3.12:refs/remotes/origin/3.12",
         ],
-        check=True,
+        check=False,
     )
 
     # Prefer the live branch; fall back to the newest tag.
