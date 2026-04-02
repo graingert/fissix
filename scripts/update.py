@@ -54,6 +54,7 @@ PATCHES_DIR = REPO_ROOT / "scripts" / "patches"
 PATCHES = [
     "tokenize_async_with.patch",
     "main_commonpath.patch",
+    "test_all_fixers_polyfill.patch",
     "test_fixers_support_import.patch",
     "test_main_xfail.patch",
     "test_parser_xfail.patch",
