@@ -1,6 +1,6 @@
 --- a/fissix/pgen2/tokenize.py
 +++ b/fissix/pgen2/tokenize.py
-@@ -593,7 +593,7 @@
+@@ -594,7 +594,7 @@
                          stashed = tok
                          continue
  

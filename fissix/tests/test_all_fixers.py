@@ -10,8 +10,9 @@ running time.
 import contextlib
 import os.path
 import sys
-import test.support
 import unittest
+
+import test.support
 
 # test.support.infinite_recursion was added in Python 3.11 (bpo-46542).
 # Polyfill it for older versions so the test suite works on 3.10.

@@ -4,7 +4,7 @@
 
 # Local imports
 from .. import fixer_base
-from ..fixer_util import Name, attr_chain
+from ..fixer_util import attr_chain, Name
 
 MAPPING = {
     "StringIO": "io",

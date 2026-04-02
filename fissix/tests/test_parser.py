@@ -6,10 +6,6 @@ parts of the grammar we've changed, we also make sure we can parse the
 test_grammar.py files from both Python 2 and Python 3.
 """
 
-# Testing imports
-from . import support
-from .support import driver, driver_no_print_statement
-
 # Python imports
 import difflib
 import importlib
@@ -20,15 +16,19 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import test.support
-import pytest
 import unittest
 
+import pytest
+import test.support
+
 # Local imports
-from fissix.pgen2 import driver as pgen2_driver
-from fissix.pgen2 import tokenize
+from fissix.pgen2 import driver as pgen2_driver, tokenize
 from fissix.pgen2.parse import ParseError
 from fissix.pygram import python_symbols as syms
+
+# Testing imports
+from . import support
+from .support import driver, driver_no_print_statement
 
 
 class TestDriver(support.TestCase):

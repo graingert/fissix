@@ -2,14 +2,14 @@
 Main program for 2to3.
 """
 
-from __future__ import with_statement, print_function
+from __future__ import print_function, with_statement
 
-import sys
-import os
 import difflib
 import logging
-import shutil
 import optparse
+import os
+import shutil
+import sys
 
 from . import refactor
 

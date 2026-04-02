@@ -3,19 +3,20 @@ This is rather similar to fix_imports, but because of the more
 complex nature of the fixing for urllib, it has its own fixer.
 """
 
+from fissix.fixer_util import (
+    Comma,
+    find_indentation,
+    FromImport,
+    Name,
+    Newline,
+    Node,
+    syms,
+)
+
 # Author: Nick Edds
 
 # Local imports
 from fissix.fixes.fix_imports import alternates, FixImports
-from fissix.fixer_util import (
-    Name,
-    Comma,
-    FromImport,
-    Newline,
-    find_indentation,
-    Node,
-    syms,
-)
 
 MAPPING = {
     "urllib": [

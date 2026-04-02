@@ -56,7 +56,6 @@ PATCHES = [
     "main_commonpath.patch",
     "fix_sorted.patch",
     "test_all_fixers_polyfill.patch",
-    "test_fixers_support_import.patch",
     "test_main_xfail.patch",
     "test_parser_xfail.patch",
 ]
@@ -159,7 +158,6 @@ _UFMT_PYPROJECT = """\
 excludes = [
     "fissix/tests/data/",
 ]
-sorter = "skip"
 """
 
 # ---------------------------------------------------------------------------
@@ -212,8 +210,8 @@ def sync(tmp_root: Path) -> None:
         if replaced != text:
             py_file.write_bytes(replaced.encode("utf-8", errors="surrogateescape"))
 
-    # 4. Write a minimal pyproject.toml so ufmt picks up sorter=skip and
-    #    excludes the Python-2 test data files (which are not valid Python 3)
+    # 4. Write a minimal pyproject.toml so ufmt excludes the Python-2 test
+    #    data files (which are not valid Python 3)
     (tmp_root / "pyproject.toml").write_text(_UFMT_PYPROJECT, encoding="utf-8")
 
     # 5. Format with ufmt; ignore non-zero exit (Python 2 data files cause

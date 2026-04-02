@@ -1,16 +1,11 @@
 diff --git a/fissix/fixes/fix_sorted.py b/fissix/fixes/fix_sorted.py
 new file mode 100644
-index 0000000..ec3b4a1
+index 0000000..b8520b9
 --- /dev/null
 +++ b/fissix/fixes/fix_sorted.py
-@@ -0,0 +1,105 @@
+@@ -0,0 +1,100 @@
 +from .. import fixer_base
-+from ..fixer_util import Call
-+from ..fixer_util import Comma
-+from ..fixer_util import KeywordArg
-+from ..fixer_util import Name
-+from ..fixer_util import Node
-+from ..fixer_util import touch_import
++from ..fixer_util import Call, Comma, KeywordArg, Name, Node, touch_import
 +from ..pgen2 import token
 +from ..pygram import python_symbols as symbols
 +
@@ -109,11 +104,22 @@ index 0000000..ec3b4a1
 +        if result.get("func_args"):
 +            ret = self._transform_keyword(result["func_args"], result)
 +            self._transform_cmp(ret, result)
-diff --git a/fissix/tests/test_fixers.py b/fissix/tests/test_fixers.py
-index 617398f..58c40f2 100644
+
 --- a/fissix/tests/test_fixers.py
 +++ b/fissix/tests/test_fixers.py
-@@ -4691,3 +4691,36 @@ class Test_asserts(FixerTestCase):
+@@ -5,10 +5,9 @@
+ from itertools import chain
+ from operator import itemgetter
+ 
+-from test.test_lib2to3 import support
+-
+ # Local imports
+ from fissix import fixer_util, pygram
++from . import support
+ 
+ 
+ class FixerTestCase(support.TestCase):
+@@ -4692,3 +4691,36 @@
      def test_unchanged(self):
          self.unchanged("self.assertEqualsOnSaturday")
          self.unchanged("self.assertEqualsOnSaturday(3, 5)")

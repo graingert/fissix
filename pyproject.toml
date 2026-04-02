@@ -66,4 +66,3 @@ excludes = [
     "^/cpython",
     "fissix/tests/data/",
 ]
-sorter = "skip"

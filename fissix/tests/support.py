@@ -1,11 +1,12 @@
 """Support code for test_*.py files"""
 
+import os
+import os.path
+
 # Author: Collin Winter
 
 # Python imports
 import unittest
-import os
-import os.path
 from textwrap import dedent
 
 # Local imports

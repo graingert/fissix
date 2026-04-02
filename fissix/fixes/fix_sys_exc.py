@@ -9,7 +9,7 @@ sys.exc_traceback -> sys.exc_info()[2]
 
 # Local imports
 from .. import fixer_base
-from ..fixer_util import Attr, Call, Name, Number, Subscript, Node, syms
+from ..fixer_util import Attr, Call, Name, Node, Number, Subscript, syms
 
 
 class FixSysExc(fixer_base.BaseFix):

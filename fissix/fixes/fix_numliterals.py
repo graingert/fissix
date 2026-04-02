@@ -1,12 +1,13 @@
 """Fixer that turns 1L into 1, 0755 into 0o755."""
 
+from .. import fixer_base
+from ..fixer_util import Number
+
 # Copyright 2007 Georg Brandl.
 # Licensed to PSF under a Contributor Agreement.
 
 # Local imports
 from ..pgen2 import token
-from .. import fixer_base
-from ..fixer_util import Number
 
 
 class FixNumliterals(fixer_base.BaseFix):

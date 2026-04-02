@@ -20,8 +20,8 @@ in all those corner cases.
 
 # Local imports
 from .. import fixer_base
+from ..fixer_util import Leaf, Node, syms
 from ..pygram import token
-from ..fixer_util import syms, Node, Leaf
 
 
 def has_metaclass(parent):

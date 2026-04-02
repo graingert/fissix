@@ -2,16 +2,16 @@
 Unit tests for refactor.py.
 """
 
-import sys
-import os
 import codecs
 import io
+import os
 import re
-import tempfile
 import shutil
+import sys
+import tempfile
 import unittest
 
-from fissix import refactor, pygram, fixer_base
+from fissix import fixer_base, pygram, refactor
 from fissix.pgen2 import token
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")

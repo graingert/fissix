@@ -23,10 +23,9 @@ The following cases will be converted:
 # Author: Collin Winter
 
 # Local imports
-from .. import pytree
+from .. import fixer_base, pytree
+from ..fixer_util import Assign, Attr, is_list, is_tuple, Name, syms
 from ..pgen2 import token
-from .. import fixer_base
-from ..fixer_util import Assign, Attr, Name, is_tuple, is_list, syms
 
 
 def find_excepts(nodes):

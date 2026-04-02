@@ -6,7 +6,7 @@ from itertools import chain
 from operator import itemgetter
 
 # Local imports
-from fissix import pygram, fixer_util
+from fissix import fixer_util, pygram
 from . import support
 
 

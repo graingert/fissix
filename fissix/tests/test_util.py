@@ -1,13 +1,14 @@
 """Test suite for the code in fixer_util"""
 
-# Testing imports
-from . import support
+from fissix import fixer_util
+from fissix.fixer_util import Attr, Call, Comma, Name
+from fissix.pgen2 import token
 
 # Local imports
-from fissix.pytree import Node, Leaf
-from fissix import fixer_util
-from fissix.fixer_util import Attr, Name, Call, Comma
-from fissix.pgen2 import token
+from fissix.pytree import Leaf, Node
+
+# Testing imports
+from . import support
 
 
 def parse(code, strip_levels=0):
