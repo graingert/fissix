@@ -27,12 +27,15 @@ so the caller knows to stage and commit them.
 from __future__ import annotations
 
 import argparse
+import logging
 import re
 import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -176,10 +179,12 @@ def sync(tmp_root: Path) -> None:
     # 1a. Copy lib2to3 core (no tests/ subdirectory in 3.12 – they were moved
     #     to Lib/test/test_lib2to3/ in CPython)
     lib2to3_src = CPYTHON_DIR / "Lib" / "lib2to3"
+    logger.debug("Copying %s → %s", lib2to3_src, tmp_fissix)
     shutil.copytree(lib2to3_src, tmp_fissix)
 
     # 1b. Copy tests from their new home in Lib/test/test_lib2to3/
     test_src = CPYTHON_DIR / "Lib" / "test" / "test_lib2to3"
+    logger.debug("Copying %s → %s/tests", test_src, tmp_fissix)
     shutil.copytree(test_src, tmp_fissix / "tests")
 
     # 1c. Preserve __version__.py – fissix-only file managed by attribution,
@@ -189,12 +194,14 @@ def sync(tmp_root: Path) -> None:
     # 2. Write fissix/__init__.py with live version markers
     py_version = _cpython_py_version()
     cpython_rev = _cpython_rev()
+    logger.info("cpython version %s (%s)", py_version, cpython_rev)
     (tmp_fissix / "__init__.py").write_text(
         _INIT_TEMPLATE.format(py_version=py_version, cpython_rev=cpython_rev),
         encoding="utf-8",
     )
 
     # 3. Rename lib2to3 → fissix in every .py file
+    logger.debug("Renaming lib2to3 → fissix in .py files")
     for py_file in tmp_fissix.rglob("*.py"):
         original = py_file.read_bytes()
         text = original.decode("utf-8", errors="surrogateescape")
@@ -208,6 +215,7 @@ def sync(tmp_root: Path) -> None:
 
     # 5. Format with ufmt; ignore non-zero exit (Python 2 data files cause
     #    parse errors that ufmt reports but gracefully skips)
+    logger.info("Formatting with ufmt …")
     subprocess.run(
         [sys.executable, "-m", "ufmt", "format", str(tmp_fissix)],
         cwd=tmp_root,
@@ -218,6 +226,7 @@ def sync(tmp_root: Path) -> None:
     #    and were generated from the formatted baseline, so quote style and
     #    namespace already match.
     for patch_name in PATCHES:
+        logger.info("Applying patch %s", patch_name)
         patch_path = PATCHES_DIR / patch_name
         subprocess.run(
             ["patch", "--no-backup-if-mismatch", "-p1", "--input", str(patch_path)],
@@ -264,7 +273,7 @@ def update_submodule() -> None:
     )
     if branch_result.returncode == 0:
         target = "origin/3.12"
-        print("cpython: using branch origin/3.12")
+        logger.info("cpython: using branch origin/3.12")
     else:
         # Branch is gone (post-EOL).  Pick the highest v3.12.x tag.
         tags = subprocess.check_output(
@@ -278,7 +287,7 @@ def update_submodule() -> None:
         # Sort by version tuple so e.g. v3.12.10 > v3.12.9
         tags.sort(key=lambda t: tuple(int(x) for x in t.lstrip("v").split(".")))
         target = tags[-1]
-        print(f"cpython: branch 3.12 not found, using latest tag {target}")
+        logger.warning("cpython: branch 3.12 not found, using latest tag %s", target)
 
     subprocess.run(
         ["git", "-C", str(CPYTHON_DIR), "checkout", target],
@@ -334,6 +343,8 @@ def copy_to_fissix(tmp_fissix: Path) -> None:
 # ---------------------------------------------------------------------------
 
 def main() -> int:
+    logging.basicConfig(level=logging.INFO, format="%(message)s")
+
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--check",
@@ -360,47 +371,47 @@ def main() -> int:
             text=True,
         ).strip()
         if is_shallow == "true":
+            logger.info("cpython submodule is shallow; unshallowing for git describe …")
             subprocess.run(
                 ["git", "-C", str(CPYTHON_DIR), "fetch", "--unshallow"],
                 check=True,
             )
         with tempfile.TemporaryDirectory() as _tmp:
             tmp_root = Path(_tmp)
-            print("Syncing lib2to3 into temporary directory …")
+            logger.info("Syncing lib2to3 into temporary directory …")
             sync(tmp_root)
             tmp_fissix = tmp_root / "fissix"
-            print(f"Copying result to {FISSIX_DIR} …")
+            logger.info("Copying result to %s …", FISSIX_DIR)
             copy_to_fissix(tmp_fissix)
 
         if fissix_has_diff():
-            print(
-                "ERROR: fissix/ is out of sync with the cpython submodule.\n"
-                "Run  python scripts/update.py  and commit the result.",
-                file=sys.stderr,
+            logger.error(
+                "fissix/ is out of sync with the cpython submodule.\n"
+                "Run  python scripts/update.py  and commit the result."
             )
             return 1
-        print("OK: fissix/ is in sync.")
+        logger.info("OK: fissix/ is in sync.")
         return 0
 
     # Update mode: advance the submodule to the latest 3.12 code first.
-    print("Updating cpython submodule to 3.12 …")
+    logger.info("Updating cpython submodule to 3.12 …")
     update_submodule()
 
     with tempfile.TemporaryDirectory() as _tmp:
         tmp_root = Path(_tmp)
-        print("Syncing lib2to3 into temporary directory …")
+        logger.info("Syncing lib2to3 into temporary directory …")
         sync(tmp_root)
         tmp_fissix = tmp_root / "fissix"
-        print(f"Copying result to {FISSIX_DIR} …")
+        logger.info("Copying result to %s …", FISSIX_DIR)
         copy_to_fissix(tmp_fissix)
 
     # Exit 1 when changes were written so the caller knows to stage and commit
     # both fissix/ and the updated cpython submodule pointer.
     if fissix_has_diff() or submodule_is_dirty():
-        print("Changes written to fissix/. Stage and commit them.")
+        logger.info("Changes written to fissix/. Stage and commit them.")
         return 1
 
-    print("No changes – fissix/ was already up to date.")
+    logger.info("No changes – fissix/ was already up to date.")
     return 0
 
 
