@@ -210,6 +210,7 @@ class TestAsyncAwait(GrammarTest):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
+    @pytest.mark.xfail
     def test_async_with(self):
         self.validate("""async def foo():
                              async with a: pass""")

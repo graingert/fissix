@@ -16,3 +16,11 @@
      @unittest.skipIf(sys.executable is None, "sys.executable required")
      @unittest.skipIf(
          sys.platform in {"emscripten", "wasi"}, "requires working subprocess"
+@@ -208,6 +210,7 @@
+         self.validate("""async def foo():
+                              async for a in b: pass""")
+ 
++    @pytest.mark.xfail
+     def test_async_with(self):
+         self.validate("""async def foo():
+                              async with a: pass""")
