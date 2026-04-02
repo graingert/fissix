@@ -347,29 +347,30 @@ def main() -> int:
         "--check",
         action="store_true",
         help=(
-            "Verify that fissix/ matches what the script would generate. "
-            "Exit 1 if it does not (suitable for CI)."
+            "Verify that fissix/ matches what the script would generate from "
+            "the *committed* cpython submodule ref. Exits 1 if it does not "
+            "(suitable for CI). Does not fetch or advance the submodule."
         ),
     )
     args = parser.parse_args()
 
-    # Always bring the submodule up to date first
-    print("Updating cpython submodule to 3.12 …")
-    update_submodule()
-
-    with tempfile.TemporaryDirectory() as _tmp:
-        tmp_root = Path(_tmp)
-        print("Syncing lib2to3 into temporary directory …")
-        sync(tmp_root)
-        tmp_fissix = tmp_root / "fissix"
-
-        print(f"Copying result to {FISSIX_DIR} …")
-        copy_to_fissix(tmp_fissix)
-
-    dirty = fissix_has_diff() or submodule_is_dirty()
-
     if args.check:
-        if dirty:
+        # Check mode: use the committed submodule ref as-is.  Just ensure it
+        # is initialised (no fetch, no branch advancement).
+        subprocess.run(
+            ["git", "submodule", "update", "--init"],
+            cwd=REPO_ROOT,
+            check=True,
+        )
+        with tempfile.TemporaryDirectory() as _tmp:
+            tmp_root = Path(_tmp)
+            print("Syncing lib2to3 into temporary directory …")
+            sync(tmp_root)
+            tmp_fissix = tmp_root / "fissix"
+            print(f"Copying result to {FISSIX_DIR} …")
+            copy_to_fissix(tmp_fissix)
+
+        if fissix_has_diff():
             print(
                 "ERROR: fissix/ is out of sync with the cpython submodule.\n"
                 "Run  python scripts/update.py  and commit the result.",
@@ -379,9 +380,21 @@ def main() -> int:
         print("OK: fissix/ is in sync.")
         return 0
 
-    # Normal (non-check) mode: exit 1 when changes were written so the caller
-    # knows to stage and commit them; exit 0 when already clean.
-    if dirty:
+    # Update mode: advance the submodule to the latest 3.12 code first.
+    print("Updating cpython submodule to 3.12 …")
+    update_submodule()
+
+    with tempfile.TemporaryDirectory() as _tmp:
+        tmp_root = Path(_tmp)
+        print("Syncing lib2to3 into temporary directory …")
+        sync(tmp_root)
+        tmp_fissix = tmp_root / "fissix"
+        print(f"Copying result to {FISSIX_DIR} …")
+        copy_to_fissix(tmp_fissix)
+
+    # Exit 1 when changes were written so the caller knows to stage and commit
+    # both fissix/ and the updated cpython submodule pointer.
+    if fissix_has_diff() or submodule_is_dirty():
         print("Changes written to fissix/. Stage and commit them.")
         return 1
 
