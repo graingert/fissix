@@ -19,6 +19,7 @@ pipeline (copy → rename → format → patch).
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import logging
 import re
 import shutil
@@ -36,6 +37,14 @@ UPDATE_PY = SCRIPTS_DIR / "update.py"
 FISSIX_DIR = REPO_ROOT / "fissix"
 
 
+def _import_update():
+    """Import scripts/update.py by file path without mutating sys.path."""
+    spec = importlib.util.spec_from_file_location("update", UPDATE_PY)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def get_head_fissix_files() -> list[str]:
     """Return fissix/ files changed in HEAD commit (relative to repo root)."""
     output = subprocess.check_output(
@@ -48,8 +57,7 @@ def get_head_fissix_files() -> list[str]:
 
 def build_unpatched_base(dest: Path) -> None:
     """Run sync() with no patches to produce the unpatched baseline."""
-    sys.path.insert(0, str(SCRIPTS_DIR))
-    import update
+    update = _import_update()
 
     saved = update.PATCHES[:]
     update.PATCHES = []
