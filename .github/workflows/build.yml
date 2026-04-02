@@ -12,6 +12,27 @@ defaults:
     shell: bash
 
 jobs:
+  check-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+      - name: Set Up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      - name: Install sync dependencies
+        run: |
+          python -m pip install -U pip
+          python -m pip install \
+            black==$(grep 'black==' pyproject.toml | grep -oP '[0-9][^"]*') \
+            ufmt==$(grep 'ufmt==' pyproject.toml | grep -oP '[0-9][^"]*') \
+            usort==$(grep 'usort==' pyproject.toml | grep -oP '[0-9][^"]*')
+      - name: Check fissix/ is in sync with cpython submodule
+        run: make check-sync
+
   fissix:
     runs-on: ${{ matrix.os }}
     strategy:
