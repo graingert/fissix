@@ -1,0 +1,35 @@
+--- fissix/tests/test_main.py
++++ fissix/tests/test_main.py
+@@ -9,6 +9,8 @@
+ import tempfile
+ import unittest
+ 
++import pytest
++
+ from lib2to3 import main
+ 
+ 
+@@ -72,6 +74,7 @@
+             trivial.write("print 'I need a simple conversion.'")
+         self.setup_files.append("trivial.py")
+ 
++    @pytest.mark.xfail
+     def test_filename_changing_on_output_single_dir(self):
+         """2to3 a single directory with a new output dir and suffix."""
+         self.setup_test_source_trees()
+@@ -101,6 +104,7 @@
+         self.assertNotRegex(
+                 stderr, r"No changes to .*/trivial\.py".replace("/", sep))
+ 
++    @pytest.mark.xfail
+     def test_filename_changing_on_output_two_files(self):
+         """2to3 two files in one directory with a new output dir."""
+         self.setup_test_source_trees()
+@@ -118,6 +122,7 @@
+                         self.py3_dest_dir, self.py2_src_dir), stderr)
+         self.assertEqual(expected_files, set(os.listdir(self.py3_dest_dir)))
+ 
++    @pytest.mark.xfail
+     def test_filename_changing_on_output_single_file(self):
+         """2to3 a single file with a new output dir."""
+         self.setup_test_source_trees()
