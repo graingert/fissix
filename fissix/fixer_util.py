@@ -25,18 +25,6 @@ def RParen():
     return Leaf(token.RPAR, ")")
 
 
-def LBrace():
-    return Leaf(token.LBRACE, "{")
-
-
-def RBrace():
-    return Leaf(token.RBRACE, "}")
-
-
-def Colon():
-    return Leaf(token.COLON, ":")
-
-
 def Assign(target, source):
     """Build an assignment statement"""
     if not isinstance(target, list):
@@ -263,7 +251,7 @@ p0 = """for_stmt< 'for' any 'in' node=any ':' any* >
      """
 p1 = """
 power<
-    ( 'iter' | 'list' | 'tuple' | 'sorted' | 'set' | 'sum' | 'dict' |
+    ( 'iter' | 'list' | 'tuple' | 'sorted' | 'set' | 'sum' |
       'any' | 'all' | 'enumerate' | (any* trailer< '.' 'join' >) )
     trailer< '(' node=any ')' >
     any*
@@ -314,7 +302,7 @@ def is_probably_builtin(node):
         # Assignment.
         return False
     if parent.type == syms.parameters or (
-        parent.type in (syms.typedargslist, syms.argument)
+        parent.type == syms.typedargslist
         and (
             (prev is not None and prev.type == token.COMMA)
             or parent.children[0] is node

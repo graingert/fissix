@@ -20,9 +20,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import unittest
-
+import test.support
 import pytest
+import unittest
 
 # Local imports
 from fissix.pgen2 import driver as pgen2_driver
@@ -32,6 +32,7 @@ from fissix.pygram import python_symbols as syms
 
 
 class TestDriver(support.TestCase):
+
     def test_formfeed(self):
         s = """print 1\n\x0cprint 2\n"""
         t = driver.parse_string(s)
@@ -62,6 +63,9 @@ class TestPgen2Caching(support.TestCase):
 
     @pytest.mark.xfail
     @unittest.skipIf(sys.executable is None, "sys.executable required")
+    @unittest.skipIf(
+        sys.platform in {"emscripten", "wasi"}, "requires working subprocess"
+    )
     def test_load_grammar_from_subprocess(self):
         tmpdir = tempfile.mkdtemp()
         tmpsubdir = os.path.join(tmpdir, "subdir")
@@ -84,17 +88,12 @@ class TestPgen2Caching(support.TestCase):
             # different hash randomization seed.
             sub_env = dict(os.environ)
             sub_env["PYTHONHASHSEED"] = "random"
-            subprocess.check_call(
-                [
-                    sys.executable,
-                    "-c",
-                    """
+            code = """
 from fissix.pgen2 import driver as pgen2_driver
 pgen2_driver.load_grammar(%r, save=True, force=True)
-                    """ % (grammar_sub_copy,),
-                ],
-                env=sub_env,
-            )
+            """ % (grammar_sub_copy,)
+            cmd = [sys.executable, "-Wignore:fissix:DeprecationWarning", "-c", code]
+            subprocess.check_call(cmd, env=sub_env)
             self.assertTrue(os.path.exists(pickle_sub_name))
 
             with open(pickle_name, "rb") as pickle_f_1, open(
@@ -207,19 +206,22 @@ class TestAsyncAwait(GrammarTest):
         self.validate("""await = 1""")
         self.validate("""def async(): pass""")
 
-    def test_async_with(self):
+    def test_async_for(self):
         self.validate("""async def foo():
                              async for a in b: pass""")
 
-        self.invalid_syntax("""def foo():
-                                   async for a in b: pass""")
-
-    def test_async_for(self):
+    def test_async_with(self):
         self.validate("""async def foo():
                              async with a: pass""")
 
         self.invalid_syntax("""def foo():
                                    async with a: pass""")
+
+    def test_async_generator(self):
+        self.validate("""async def foo():
+                   return (i * 2 async for i in arange(42))""")
+        self.validate("""def foo():
+                   return (i * 2 async for i in arange(42))""")
 
 
 class TestRaiseChanges(GrammarTest):
@@ -282,6 +284,12 @@ class TestUnpackingGeneralizations(GrammarTest):
 
     def test_dict_display_2(self):
         self.validate("""{**{}, 3:4, **{5:6, 7:8}}""")
+
+    def test_complex_star_expression(self):
+        self.validate("func(* [] or [1])")
+
+    def test_complex_double_star_expression(self):
+        self.validate("func(**{1: 3} if False else {x: x for x in range(3)})")
 
     def test_argument_unpacking_1(self):
         self.validate("""f(a, *b, *c, d)""")
@@ -614,24 +622,30 @@ class TestClassDef(GrammarTest):
 class TestParserIdempotency(support.TestCase):
     """A cut-down version of pytree_idempotency.py."""
 
+    def parse_file(self, filepath):
+        if test.support.verbose:
+            print(f"Parse file: {filepath}")
+        with open(filepath, "rb") as fp:
+            encoding = tokenize.detect_encoding(fp.readline)[0]
+        self.assertIsNotNone(encoding, "can't detect encoding for %s" % filepath)
+        with open(filepath, "r", encoding=encoding) as fp:
+            source = fp.read()
+        try:
+            tree = driver.parse_string(source)
+        except ParseError:
+            try:
+                tree = driver_no_print_statement.parse_string(source)
+            except ParseError as err:
+                self.fail("ParseError on file %s (%s)" % (filepath, err))
+        new = str(tree)
+        if new != source:
+            print(diff_texts(source, new, filepath))
+            self.fail("Idempotency failed: %s" % filepath)
+
     def test_all_project_files(self):
         for filepath in support.all_project_files():
-            with open(filepath, "rb") as fp:
-                encoding = tokenize.detect_encoding(fp.readline)[0]
-            self.assertIsNotNone(encoding, "can't detect encoding for %s" % filepath)
-            with open(filepath, "r", encoding=encoding) as fp:
-                source = fp.read()
-            try:
-                tree = driver.parse_string(source)
-            except ParseError:
-                try:
-                    tree = driver_no_print_statement.parse_string(source)
-                except ParseError as err:
-                    self.fail("ParseError on file %s (%s)" % (filepath, err))
-            new = str(tree)
-            if new != source:
-                print(diff_texts(source, new, filepath))
-                self.fail("Idempotency failed: %s" % filepath)
+            with self.subTest(filepath=filepath):
+                self.parse_file(filepath)
 
     def test_extended_unpacking(self):
         driver.parse_string("a, *b, c = x\n")
@@ -641,6 +655,7 @@ class TestParserIdempotency(support.TestCase):
 
 
 class TestLiterals(GrammarTest):
+
     def validate(self, s):
         driver.parse_string(support.dedent(s) + "\n\n")
 
@@ -673,6 +688,8 @@ class TestLiterals(GrammarTest):
 
 
 class TestNamedAssignments(GrammarTest):
+    """Also known as the walrus operator."""
+
     def test_named_assignment_if(self):
         driver.parse_string("if f := x(): pass\n")
 
@@ -684,6 +701,27 @@ class TestNamedAssignments(GrammarTest):
 
     def test_named_assignment_listcomp(self):
         driver.parse_string("[(lastNum := num) == 1 for num in [1, 2, 3]]\n")
+
+
+class TestPositionalOnlyArgs(GrammarTest):
+
+    def test_one_pos_only_arg(self):
+        driver.parse_string("def one_pos_only_arg(a, /): pass\n")
+
+    def test_all_markers(self):
+        driver.parse_string("def all_markers(a, b=2, /, c, d=4, *, e=5, f): pass\n")
+
+    def test_all_with_args_and_kwargs(self):
+        driver.parse_string("""def all_markers_with_args_and_kwargs(
+                           aa, b, /, _cc, d, *args, e, f_f, **kwargs,
+                   ):
+                       pass\n""")
+
+    def test_lambda_soup(self):
+        driver.parse_string("lambda a, b, /, c, d, *args, e, f, **kw: kw\n")
+
+    def test_only_positional_or_keyword(self):
+        driver.parse_string("def func(a,b,/,*,g,e=3): pass\n")
 
 
 class TestPickleableException(unittest.TestCase):

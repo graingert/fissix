@@ -18,6 +18,7 @@ PY2_TEST_MODULE = os.path.join(TEST_DATA_DIR, "py2_test_grammar.py")
 
 
 class TestMain(unittest.TestCase):
+
     def setUp(self):
         self.temp_dir = None  # tearDown() will rmtree this directory if set.
 

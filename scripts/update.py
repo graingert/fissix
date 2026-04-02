@@ -97,7 +97,7 @@ _INIT_TEMPLATE = '''\
 
 
 """
-Monkeypatches to override default behavior of lib2to3.
+Monkeypatches to override default behavior of fissix.
 """
 
 import logging
