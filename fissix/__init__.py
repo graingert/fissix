@@ -8,7 +8,6 @@ Monkeypatches to override default behavior of fissix.
 
 import logging
 import os
-import sys
 import tempfile
 from pathlib import Path
 

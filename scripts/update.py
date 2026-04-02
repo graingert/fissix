@@ -46,9 +46,11 @@ CPYTHON_DIR = REPO_ROOT / "cpython"
 FISSIX_DIR = REPO_ROOT / "fissix"
 PATCHES_DIR = REPO_ROOT / "scripts" / "patches"
 
-# Patches are applied (with ``patch -p0``) from a directory whose layout
+# Patches are applied (with ``patch -p1``) from a directory whose layout
 # mirrors the repo root, i.e. the temp working dir contains a ``fissix/``
 # sub-directory so that paths like ``fissix/main.py`` resolve correctly.
+# Patch headers use ``a/fissix/`` / ``b/fissix/`` (git diff format); -p1
+# strips that leading ``a/`` / ``b/`` component.
 PATCHES = [
     "tokenize_async_with.patch",
     "main_commonpath.patch",
@@ -97,7 +99,6 @@ Monkeypatches to override default behavior of fissix.
 
 import logging
 import os
-import sys
 import tempfile
 from pathlib import Path
 
@@ -284,9 +285,13 @@ def update_submodule() -> None:
             raise RuntimeError(
                 "No v3.12.* tags found in cpython remote and branch 3.12 is gone"
             )
-        # Sort by version tuple so e.g. v3.12.10 > v3.12.9
-        tags.sort(key=lambda t: tuple(int(x) for x in t.lstrip("v").split(".")))
-        target = tags[-1]
+        # Sort by version tuple so e.g. v3.12.10 > v3.12.9.
+        # Filter to final releases only (x.y.z with all-numeric components)
+        # to avoid int() failing on pre-release suffixes like "0a1".
+        _final_re = re.compile(r"^v\d+\.\d+\.\d+$")
+        final_tags = [t for t in tags if _final_re.match(t)] or tags
+        final_tags.sort(key=lambda t: tuple(int(x) for x in t.lstrip("v").split(".")))
+        target = final_tags[-1]
         logger.warning("cpython: branch 3.12 not found, using latest tag %s", target)
 
     subprocess.run(
