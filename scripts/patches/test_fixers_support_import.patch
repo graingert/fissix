@@ -1,9 +1,9 @@
---- fissix/tests/test_fixers.py
-+++ fissix/tests/test_fixers.py
+--- a/fissix/tests/test_fixers.py
++++ b/fissix/tests/test_fixers.py
 @@ -7,7 +7,7 @@
  
  # Local imports
- from lib2to3 import pygram, fixer_util
+ from fissix import pygram, fixer_util
 -from test.test_lib2to3 import support
 +from . import support
  

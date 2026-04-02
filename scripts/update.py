@@ -9,9 +9,10 @@ Workflow
 2. Copy cpython/Lib/lib2to3/ and cpython/Lib/test/test_lib2to3/ into a
    TemporaryDirectory, preserving fissix's own __version__.py.
 3. Write fissix/__init__.py with version markers read from the submodule.
-4. Apply the fissix-specific patch files from scripts/patches/.
-5. Replace every ``lib2to3`` identifier with ``fissix`` in all .py files.
-6. Format with ufmt (black + usort).
+4. Replace every ``lib2to3`` identifier with ``fissix`` in all .py files.
+5. Format with ufmt (black + usort).
+6. Apply the fissix-specific patch files from scripts/patches/ against
+   the fully formatted, renamed tree.
 7. Copy the result on top of fissix/ in the working tree.
 8. Exit 1 if git reports any diff in fissix/ or the cpython submodule
    pointer is out of date – use this as a CI "check" step.
@@ -201,17 +202,7 @@ def sync(tmp_root: Path) -> None:
         encoding="utf-8",
     )
 
-    # 3. Apply fissix-specific patches (paths in patches use ``fissix/`` prefix,
-    #    so we run patch from tmp_root so the paths resolve correctly)
-    for patch_name in PATCHES:
-        patch_path = PATCHES_DIR / patch_name
-        subprocess.run(
-            ["patch", "--no-backup-if-mismatch", "-p0", "--input", str(patch_path)],
-            cwd=tmp_root,
-            check=True,
-        )
-
-    # 4. Rename lib2to3 → fissix in every .py file
+    # 3. Rename lib2to3 → fissix in every .py file
     for py_file in tmp_fissix.rglob("*.py"):
         original = py_file.read_bytes()
         text = original.decode("utf-8", errors="surrogateescape")
@@ -219,16 +210,28 @@ def sync(tmp_root: Path) -> None:
         if replaced != text:
             py_file.write_bytes(replaced.encode("utf-8", errors="surrogateescape"))
 
-    # 5. Write a minimal pyproject.toml so ufmt picks up sorter=skip and
+    # 4. Write a minimal pyproject.toml so ufmt picks up sorter=skip and
     #    excludes the Python-2 test data files (which are not valid Python 3)
     (tmp_root / "pyproject.toml").write_text(_UFMT_PYPROJECT, encoding="utf-8")
 
-    # 6. Format with ufmt; ignore non-zero exit (Python 2 data files cause
+    # 5. Format with ufmt; ignore non-zero exit (Python 2 data files cause
     #    parse errors that ufmt reports but gracefully skips)
     subprocess.run(
         [sys.executable, "-m", "ufmt", "format", str(tmp_fissix)],
         cwd=tmp_root,
     )
+
+    # 6. Apply fissix-specific patches against the formatted, renamed tree.
+    #    Patches use ``a/fissix/`` / ``b/fissix/`` paths (-p1 strips the a/b prefix)
+    #    and were generated from the formatted baseline, so quote style and
+    #    namespace already match.
+    for patch_name in PATCHES:
+        patch_path = PATCHES_DIR / patch_name
+        subprocess.run(
+            ["patch", "--no-backup-if-mismatch", "-p1", "--input", str(patch_path)],
+            cwd=tmp_root,
+            check=True,
+        )
 
 
 # ---------------------------------------------------------------------------

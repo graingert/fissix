@@ -1,12 +1,15 @@
---- fissix/main.py
-+++ fissix/main.py
-@@ -236,13 +236,13 @@
+--- a/fissix/main.py
++++ b/fissix/main.py
+@@ -295,16 +295,13 @@
      else:
          requested = avail_fixes.union(explicit)
      fixer_names = requested.difference(unwanted_fixes)
 -    input_base_dir = os.path.commonprefix(args)
--    if (input_base_dir and not input_base_dir.endswith(os.sep)
--        and not os.path.isdir(input_base_dir)):
+-    if (
+-        input_base_dir
+-        and not input_base_dir.endswith(os.sep)
+-        and not os.path.isdir(input_base_dir)
+-    ):
 -        # One or more similar names were passed, their directory is the base.
 -        # os.path.commonprefix() is ignorant of path elements, this corrects
 -        # for that weird API.
@@ -20,4 +23,4 @@
 +        input_base_dir = ""
      if options.output_dir:
          input_base_dir = input_base_dir.rstrip(os.sep)
-         logger.info('Output in %r will mirror the input directory %r layout.',
+         logger.info(

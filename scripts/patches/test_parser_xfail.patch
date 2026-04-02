@@ -1,5 +1,5 @@
---- fissix/tests/test_parser.py
-+++ fissix/tests/test_parser.py
+--- a/fissix/tests/test_parser.py
++++ b/fissix/tests/test_parser.py
 @@ -21,6 +21,7 @@
  import sys
  import tempfile
@@ -8,11 +8,11 @@
  import unittest
  
  # Local imports
-@@ -62,6 +63,7 @@
+@@ -60,6 +61,7 @@
          finally:
              shutil.rmtree(tmpdir)
  
 +    @pytest.mark.xfail
-     @unittest.skipIf(sys.executable is None, 'sys.executable required')
+     @unittest.skipIf(sys.executable is None, "sys.executable required")
      @unittest.skipIf(
-         sys.platform in {'emscripten', 'wasi'}, 'requires working subprocess'
+         sys.platform in {"emscripten", "wasi"}, "requires working subprocess"
