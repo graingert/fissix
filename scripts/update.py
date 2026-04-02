@@ -366,8 +366,8 @@ def main() -> int:
 
     if args.check:
         # Check mode: use the committed submodule ref as-is.  Initialise it
-        # and unshallow if needed so that git describe has access to tag
-        # history (CI checks out submodules with --depth=1).
+        # and fetch only v3.12.* tags + enough depth for git describe to
+        # reach one (CI checks out submodules with --depth=1).
         subprocess.run(
             ["git", "submodule", "update", "--init"],
             cwd=REPO_ROOT,
@@ -378,9 +378,16 @@ def main() -> int:
             text=True,
         ).strip()
         if is_shallow == "true":
-            logger.info("cpython submodule is shallow; unshallowing for git describe …")
+            logger.info("cpython submodule is shallow; fetching v3.12.* tags …")
             subprocess.run(
-                ["git", "-C", str(CPYTHON_DIR), "fetch", "--unshallow"],
+                [
+                    "git", "-C", str(CPYTHON_DIR), "fetch", "origin",
+                    "+refs/tags/v3.12.*:refs/tags/v3.12.*",
+                ],
+                check=True,
+            )
+            subprocess.run(
+                ["git", "-C", str(CPYTHON_DIR), "fetch", "--deepen=20", "origin"],
                 check=True,
             )
         with tempfile.TemporaryDirectory() as _tmp:
